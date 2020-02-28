@@ -92,6 +92,7 @@ class TransitionSystem(object):
                 newState.actionsLeadingToState[0].append(actionsLeadingToState)
                 #newState.iterate_all_requests() --> replaced by iterating the remainingRequests. change made because could only decrement at max once since deep copying the remainingRequests and prevState.currRequests
                 newState.update_port_states(copiedRequests)
+
                 #check for copy
                 tmp = self.check_if_state_is_duplicate(newState)
                 if tmp != None:
