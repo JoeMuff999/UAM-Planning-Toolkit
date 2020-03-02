@@ -73,6 +73,7 @@ class TransitionSystem(object):
             return
         else:
             choices = self.generate_choices(len(remainingRequests)) #power set
+            #print(choices)
             for choice in choices: #choices = [[]], choice = [] (ex: [1,2])
                 copiedRequests = []
                 copySelectedRequest = None
@@ -97,10 +98,10 @@ class TransitionSystem(object):
                 tmp = self.check_if_state_is_duplicate(newState)
                 if tmp != None:
                     tmp.add_action_list(newState.actionsLeadingToState[0])
-                    newEdge = self.Edge(previousState, copySelectedRequest, tmp)
+                    newEdge = self.Edge(previousState, copiedRequests, tmp)
                 else:
                     self.states.append(newState)
-                    newEdge = self.Edge(previousState, copySelectedRequest, newState)
+                    newEdge = self.Edge(previousState, copiedRequests, newState)
 
                 self.edges.append(newEdge)
 
@@ -118,7 +119,7 @@ class TransitionSystem(object):
     def generate_choices(self, numRequests): #combinations up to length acceptedRequestPerStep
         baseList = [i for i in range(numRequests)]
         listToReturn = []
-        for i in range(1, self.acceptedRequestsPerStep+1): #TODO remove the 1 to include case where you dont choose a request
+        for i in range(self.acceptedRequestsPerStep+1): #TODO remove the 1 to include case where you dont choose a request
             tmp = combinations(baseList, i)
             listToReturn.extend(tmp)
         return listToReturn
@@ -206,14 +207,14 @@ class TransitionSystem(object):
 
 
     class Edge(object):
-        def __init__(self, prevState=None, requestTaken=None, nextState=None):
+        def __init__(self, prevState=None, actionTaken=None, nextState=None):
             self.prevState = prevState
-            self.requestTaken = requestTaken
+            self.actionTaken = actionTaken
             self.nextState = nextState
 
         def __str__(self):
-            return "Edge...Previous State :: " + str(self.prevState) + ", Request Taken:: " + str(
-                self.requestTaken) + ", Next State:: " + str(self.nextState) + "\n"
+            return "Edge...Previous State :: " + str(self.prevState) + ", Request(s) taken:: " + str(
+                self.actionTaken) + ", Next State:: " + str(self.nextState) + "\n"
 
         def __repr__(self):
             return self.__str__()
@@ -242,7 +243,6 @@ class Request(object):
         return self.__str__()
 
 
-
 class Port(object):
     def __init__(self, aircraftInPorts, maxAircraftInPorts=None):
         self.aircraftInPorts = aircraftInPorts
@@ -251,11 +251,12 @@ class Port(object):
 
 #testing values
 #numPorts=0, portCapacity=0, acceptedRequestsPerStep=0, requestVector=None, allowedTimePerRequest=0 -> for init TS
-graph = TransitionSystem(3, 5, 2, [1,2,1], [3,2,2])
-#graph.generate_states(graph.initRequests, [], graph.ports)
-emptyPortState = [0] * len(graph.initRequests) #use for generating the base state (full init request list and all zero port state list)
-baseState = graph.State(graph.initRequests, emptyPortState)
-graph.states.append(baseState)
-graph.generate_states(baseState, graph.initRequests)
-print(graph.states)
+# graph = TransitionSystem(3, 5, 2, [1,2], [2,2])
+# #graph.generate_states(graph.initRequests, [], graph.ports)
+# emptyPortState = [0] * len(graph.initRequests) #use for generating the base state (full init request list and all zero port state list)
+# baseState = graph.State(graph.initRequests, emptyPortState)
+# graph.states.append(baseState)
+# graph.generate_states(baseState, graph.initRequests)
+# print(graph.edges)
+# print(graph.states)
 
