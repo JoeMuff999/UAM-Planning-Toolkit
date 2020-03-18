@@ -17,9 +17,10 @@ class TransitionSystem(object):
         # print(self.initRequests)
         #print([str(r) for r in self.initRequests])
         self.traces = [[]]
-        self.states = []
-        self.edges = []
-
+        #$self.states = []
+        #self.edges = []
+        self.edges = set()
+        self.states = set()
     def generate_requests_from_integer_vector(self, requestVector):
         tmpList = []
         counter = 0
@@ -88,23 +89,33 @@ class TransitionSystem(object):
                         del remainingRequests[indexForRR]
                         offset += 1 #use this offset because since we are using indexes, we need to shift
                 #meat
-                newState = self.State(copy.deepcopy(remainingRequests), copy.deepcopy(previousState.currPortStates), copy.deepcopy(previousState.actionsLeadingToState))
+                newState = self.State(copy.deepcopy(remainingRequests), copy.deepcopy(previousState.currPortStates))#, copy.deepcopy(previousState.actionsLeadingToState))
                 actionsLeadingToState = self.generate_port_list(copiedRequests)
-                newState.actionsLeadingToState[0].append(actionsLeadingToState)
+                #newState.actionsLeadingToState[0].append(actionsLeadingToState)
                 #newState.iterate_all_requests() --> replaced by iterating the remainingRequests. change made because could only decrement at max once since deep copying the remainingRequests and prevState.currRequests
                 newState.update_port_states(copiedRequests)
-
                 #check for copy
                 tmp = self.check_if_state_is_duplicate(newState)
+                prevTemp = self.check_if_state_is_duplicate(previousState)
+                newEdge = tuple()
                 if tmp != None:
-                    tmp.add_action_list(newState.actionsLeadingToState[0])
-                    newEdge = self.Edge(previousState, copiedRequests, tmp)
+                    #tmp.add_action_list(newState.actionsLeadingToState[0])
+                    if prevTemp != None:
+                        newEdge = None#self.Edge(prevTemp, copiedRequests, tmp)
+                    else:
+                        newEdge = self.Edge(previousState, copiedRequests, tmp)
                 else:
-                    self.states.append(newState)
-                    newEdge = self.Edge(previousState, copiedRequests, newState)
+                   # self.states.append(newState)
+                    self.states.add(newState)
+                    if prevTemp != None:
+                        newEdge = None#self.Edge(prevTemp, copiedRequests, newState)
+                    else:
+                        newEdge = self.Edge(previousState, copiedRequests, newState)
 
-                self.edges.append(newEdge)
 
+               # self.edges.append(newEdge)
+                if newEdge is not None:
+                    self.edges.add(newEdge)
                 #take choice
                 self.generate_states(newState, remainingRequests)
 
@@ -156,14 +167,15 @@ class TransitionSystem(object):
 
     #class for representing States (nodes of graph)
     class State(object):
-        def __init__(self, currentRequests=[], currentPortStates=[], actionsLeadingToState=[[]]):
+        def __init__(self, currentRequests=[], currentPortStates=[]):#, actionsLeadingToState=[[]]):
             self.currRequests = currentRequests
             self.currPortStates = currentPortStates
-            self.actionsLeadingToState = actionsLeadingToState
+            #self.actionsLeadingToState = actionsLeadingToState
+            self.labels = self.generate_labels()
 
         #action list = actions that led to the current state, this adds another path/trace that was taken to this state to its internal list
-        def add_action_list(self, listOfActions):
-            self.actionsLeadingToState.append(listOfActions)
+        # def add_action_list(self, listOfActions):
+        #     self.actionsLeadingToState.append(listOfActions)
 
          #FIXME remove this in future, likely redundant
         def iterate_all_requests(self):
@@ -178,7 +190,18 @@ class TransitionSystem(object):
             for req in listOfRequests:
                 if req is not None:
                     self.currPortStates[req.portNumber-1] += 1
-        #FIXME checks if any requests in this state are expired, likely useless
+
+        def generate_labels(self):
+            tmp = []
+            #no expired requests
+            if not self.contains_expired_request():
+                tmp.append("VALID")
+            #no more requests
+            if len(self.currRequests) == 0:
+                tmp.append("SAT")
+            return tmp
+
+        #checks if any requests in this state are expired
         def contains_expired_request(self):
             for req in self.currRequests:
                 if req.numStepsLeft < 0:
@@ -201,23 +224,23 @@ class TransitionSystem(object):
             return True
 
         def __str__(self):
-            return "State currently has requests :: " + str(self.currRequests) + " And currently has port states of :: " + str(self.currPortStates) + " Possible Paths's:: " + str(self.actionsLeadingToState) + "  \n"
+            return "State currently has requests :: " + str(self.currRequests) + " Port states of :: " + str(self.currPortStates) + " Labels :: " + str(self.labels) + "  \n" #+ " Possible Paths's:: " + str(self.actionsLeadingToState) + "  \n"
         def __repr__(self):
             return self.__str__()
 
 
-    class Edge(object):
-        def __init__(self, prevState=None, actionTaken=None, nextState=None):
-            self.prevState = prevState
-            self.actionTaken = actionTaken
-            self.nextState = nextState
-
-        def __str__(self):
-            return "Edge...Previous State :: " + str(self.prevState) + ", Request(s) taken:: " + str(
-                self.actionTaken) + ", Next State:: " + str(self.nextState) + "\n"
-
-        def __repr__(self):
-            return self.__str__()
+    # class Edge(object):
+    #     def __init__(self, prevState=None, actionTaken=None, nextState=None):
+    #         self.prevState = prevState
+    #         self.actionTaken = actionTaken
+    #         self.nextState = nextState
+    #
+    #     def __str__(self):
+    #         return "Edge...Previous State :: " + str(self.prevState) + ", Request(s) taken:: " + str(
+    #             self.actionTaken) + ", Next State:: " + str(self.nextState) + "\n"
+    #
+    #     def __repr__(self):
+    #         return self.__str__()
 
 class Request(object):
     def __init__(self, portNumber, maxStepsAllowed, numStepsLeft=None): #allow for more freedom in defining requests (not just limited to integer vector)
@@ -251,12 +274,12 @@ class Port(object):
 
 #testing values
 #numPorts=0, portCapacity=0, acceptedRequestsPerStep=0, requestVector=None, allowedTimePerRequest=0 -> for init TS
-# graph = TransitionSystem(3, 5, 2, [1,2], [2,2])
-# #graph.generate_states(graph.initRequests, [], graph.ports)
-# emptyPortState = [0] * len(graph.initRequests) #use for generating the base state (full init request list and all zero port state list)
-# baseState = graph.State(graph.initRequests, emptyPortState)
-# graph.states.append(baseState)
-# graph.generate_states(baseState, graph.initRequests)
-# print(graph.edges)
-# print(graph.states)
+graph = TransitionSystem(3, 5, 2, [1,2], [2,2])
+#graph.generate_states(graph.initRequests, [], graph.ports)
+emptyPortState = [0] * len(graph.initRequests) #use for generating the base state (full init request list and all zero port state list)
+baseState = graph.State(copy.deepcopy(graph.initRequests), emptyPortState)
+graph.states.add(baseState)
+graph.generate_states(baseState, graph.initRequests)
+print(graph.edges)
+print(graph.states)
 
