@@ -229,18 +229,18 @@ class TransitionSystem(object):
             return self.__str__()
 
 
-    # class Edge(object):
-    #     def __init__(self, prevState=None, actionTaken=None, nextState=None):
-    #         self.prevState = prevState
-    #         self.actionTaken = actionTaken
-    #         self.nextState = nextState
-    #
-    #     def __str__(self):
-    #         return "Edge...Previous State :: " + str(self.prevState) + ", Request(s) taken:: " + str(
-    #             self.actionTaken) + ", Next State:: " + str(self.nextState) + "\n"
-    #
-    #     def __repr__(self):
-    #         return self.__str__()
+    class Edge(object):
+        def __init__(self, prevState=None, actionTaken=None, nextState=None):
+            self.prevState = prevState
+            self.actionTaken = actionTaken
+            self.nextState = nextState
+
+        def __str__(self):
+            return "Edge...Previous State :: " + str(self.prevState) + ", Request(s) taken:: " + str(
+                self.actionTaken) + ", Next State:: " + str(self.nextState) + "\n"
+
+        def __repr__(self):
+            return self.__str__()
 
 class Request(object):
     def __init__(self, portNumber, maxStepsAllowed, numStepsLeft=None): #allow for more freedom in defining requests (not just limited to integer vector)
@@ -274,7 +274,7 @@ class Port(object):
 
 #testing values
 #numPorts=0, portCapacity=0, acceptedRequestsPerStep=0, requestVector=None, allowedTimePerRequest=0 -> for init TS
-graph = TransitionSystem(3, 5, 2, [1,2], [2,2])
+graph = TransitionSystem(3, 5, 2, [1,2,3], [2,2,2])
 #graph.generate_states(graph.initRequests, [], graph.ports)
 emptyPortState = [0] * len(graph.initRequests) #use for generating the base state (full init request list and all zero port state list)
 baseState = graph.State(copy.deepcopy(graph.initRequests), emptyPortState)

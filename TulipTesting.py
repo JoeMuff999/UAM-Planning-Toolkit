@@ -21,7 +21,7 @@ ts.states.initial.add(baseState)
 
 for transition in setOfTransitions:
     ts.transitions.add(
-        transition.prevState, transition.nextState
+        transition.prevState, transition.nextState, 1
     )
 ts.atomic_propositions.add("VALID")
 ts.atomic_propositions.add("SAT")
