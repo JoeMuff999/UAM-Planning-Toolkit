@@ -1,5 +1,6 @@
 import copy
 from itertools import combinations
+from itertools import product
 REQUESTS = 0
 TIMES = 1
 class ReworkedGraph(object):
@@ -19,45 +20,60 @@ class ReworkedGraph(object):
         self.transitions = set()
 
         self.states.add(self.base_state)
-        self.generate_states(self.base_state, (copy.deepcopy(self.request_vector), copy.deepcopy(self.max_time_per_req_vector)))
+        self.generate_states(self.base_state, (copy.deepcopy(self.request_vector), copy.deepcopy(self.max_time_per_req_vector)), copy.deepcopy(self.base_state._port_dict))
 
-    def generate_states(self, previous_state=None, remaining_requests=([], [])):
-        if (len(remaining_requests[0]) == 0) or (not all(i >= 0 for i in remaining_requests[TIMES])):
+    def generate_states(self, previous_state=None, remaining_requests=([], []), port_dict=None):
+        if (len(remaining_requests[0]) == 0): #or (not all(i >= 0 for i in remaining_requests[TIMES])):
             return
+        elif all(i == -1 for i in remaining_requests[TIMES]) and not previous_state.scratch:
+            tmp = tuple() #empty choice
+            transition = (previous_state, tmp, previous_state)
+            if transition in self.transitions:
+                return
+            else:
+                self.transitions.add(transition)
+                previous_state.scratch = True # use so that doesn't infinitely self loop, but does allow it to recurse if first time
+                self.generate_states(previous_state, remaining_requests, port_dict)
         else:
             choices = self.generate_choices(len(remaining_requests[0]))
             for choice in choices:
-                copied_requests = []
-                self.iterate_all_requests(remaining_requests, choice)
-                if len(choice) != 0:
-                    copied_requests = [None] * choice[len(choice)-1]
-                    offset = 0
-                    for i in choice:
-                        index_for_RR = i - offset
-                        copy_of_selected_request = (remaining_requests[REQUESTS][index_for_RR], remaining_requests[TIMES][index_for_RR])
-                        assert type(copy_of_selected_request) is tuple
-                        copied_requests.insert(i, copy_of_selected_request) #copied_requests = list of tuples, tuple = (reqName,time)
-                        del remaining_requests[REQUESTS][index_for_RR]
-                        del remaining_requests[TIMES][index_for_RR]
-                        offset += 1
+                port_permutations = self.generate_cartesian_product(previous_state._port_dict.keys(), len(choice))
+                for port_choice in port_permutations:
 
-                new_state = State(tuple(copy.deepcopy(remaining_requests[REQUESTS])), tuple(copy.deepcopy(remaining_requests[TIMES])))
-                new_state._port_dict = copy.deepcopy(previous_state._port_dict)
-                new_state.update_port_states(copied_requests)
+                    copied_requests = []
+                    indices_of_negatives = self.generate_ignore_list(remaining_requests)
+                    self.iterate_all_requests(remaining_requests, choice, indices_of_negatives)
+                    if len(choice) != 0:
+                        copied_requests = [None] * choice[len(choice)-1]
+                        offset = 0
+                        for i in choice:
+                            index_for_RR = i - offset
+                            copy_of_selected_request = (remaining_requests[REQUESTS][index_for_RR], remaining_requests[TIMES][index_for_RR])
+                            assert type(copy_of_selected_request) is tuple
+                            copied_requests.insert(i, copy_of_selected_request) #copied_requests = list of tuples, tuple = (reqName,time)
+                            del remaining_requests[REQUESTS][index_for_RR]
+                            del remaining_requests[TIMES][index_for_RR]
+                            offset += 1
 
-                self.states.add(new_state)
-                tmp = [i for i in copied_requests if i] #remove none
-                transition = (previous_state, tuple(tmp), new_state)
-                self.transitions.add(transition)
+                    new_state = State(tuple(copy.deepcopy(remaining_requests[REQUESTS])), tuple(copy.deepcopy(remaining_requests[TIMES])))
 
-                self.generate_states(new_state, remaining_requests)
+                    self.update_port_states(port_dict, port_choice)
+                    new_state._port_dict = copy.deepcopy(port_dict)
 
-                for i in range(len(copied_requests)):
-                    req = copied_requests[i]
-                    if req is not None:
-                        remaining_requests[REQUESTS].insert(i, req[REQUESTS])
-                        remaining_requests[TIMES].insert(i, req[TIMES])
-                self.undo_iteration_of_requests(remaining_requests, choice)
+                    self.states.add(new_state)
+                    tmp = [i for i in copied_requests if i] #remove none
+                    transition = (previous_state, tuple(tmp), new_state)
+                    self.transitions.add(transition)
+
+                    self.generate_states(new_state, remaining_requests, port_dict)
+
+                    for i in range(len(copied_requests)):
+                        req = copied_requests[i]
+                        if req is not None:
+                            remaining_requests[REQUESTS].insert(i, req[REQUESTS])
+                            remaining_requests[TIMES].insert(i, req[TIMES])
+                    self.undo_iteration_of_requests(remaining_requests, choice, indices_of_negatives)
+                    self.reset_port_states(port_dict, port_choice)
 
 
     def generate_choices(self, num_requests):
@@ -68,15 +84,34 @@ class ReworkedGraph(object):
             list_to_return.extend(tmp)
         return list_to_return
 
-    def iterate_all_requests(self, req_vec, ignore_vec):
+    def generate_cartesian_product(self, keys, length_of_choice):
+        tmp = list(product(keys, repeat=length_of_choice))
+        return tmp
+
+    def generate_ignore_list(self, req_vec):
+        tmp_list = []
+        for i in range(len(req_vec[TIMES])):
+            if req_vec[TIMES][i] == -1:
+                tmp_list.append(i)
+        return tmp_list
+
+    def update_port_states(self, port_dict, keys_to_iterate):
+        for key in keys_to_iterate:
+            port_dict[key] += 1
+
+    def reset_port_states(self, port_dict, keys_to_deiterate):
+        for key in keys_to_deiterate:
+            port_dict[key] -= 1
+
+    def iterate_all_requests(self, req_vec, ignore_vec, negative_vec):
         #req_vev = tuple(list('a','b'), list(2,2)) set(requests, times)
         for i in range(len(req_vec[1])):
-            if i not in ignore_vec:
+            if i not in ignore_vec and i not in negative_vec:
                 req_vec[1][i] -= 1
 
-    def undo_iteration_of_requests(self, req_vec, ignore_vec):
+    def undo_iteration_of_requests(self, req_vec, ignore_vec, negative_vec):
         for i in range(len(req_vec[1])):
-            if i not in ignore_vec:
+            if i not in ignore_vec and i not in negative_vec:
                 req_vec[1][i] += 1
 
 
@@ -91,12 +126,10 @@ class State(object):
         self.request_vector = request_vector
         self.time_vector = time_vector
         self._port_dict = self._generate_ports()
+        self.labels = self._generate_labels()
+        self.scratch = False
 
-    def update_port_states(self, copied_requests):
-        for req in copied_requests:
-            if req is not None:
-                key = req[0]
-                self._port_dict[key] += 1
+
 
     def _generate_ports(self):
         dict_to_return = dict()
@@ -105,14 +138,29 @@ class State(object):
             tmp_tuple = (req, 0)
             assert type(tmp_tuple) is tuple
             tmp_set.add(tmp_tuple)
-
         for tup in tmp_set:
             dict_to_return.update({tup[0]: tup[1]})
         return dict_to_return
 
+    def _generate_labels(self):
+        label_tmp = []
+        if not self._contains_expired_request():
+            label_tmp.append("VALID")
+        if len(self.request_vector) is 0:
+            label_tmp.append("SAT")
+        return label_tmp
+
+    #valid label
+    def _contains_expired_request(self):
+        return all(i >= 0 for i in self.time_vector)
+
 
     def __key(self):
-        return (self.request_vector, self.time_vector)
+        port_list = []
+        for key in self._port_dict:
+            port_list.append(self._port_dict[key])
+        port_tuple = tuple(port_list)
+        return (self.request_vector, self.time_vector, port_tuple)
 
     def __hash__(self):
         return hash(self.__key())

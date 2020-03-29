@@ -274,12 +274,12 @@ class Port(object):
 
 #testing values
 #numPorts=0, portCapacity=0, acceptedRequestsPerStep=0, requestVector=None, allowedTimePerRequest=0 -> for init TS
-graph = TransitionSystem(3, 5, 2, [1,2,3], [2,2,2])
-#graph.generate_states(graph.initRequests, [], graph.ports)
-emptyPortState = [0] * len(graph.initRequests) #use for generating the base state (full init request list and all zero port state list)
-baseState = graph.State(copy.deepcopy(graph.initRequests), emptyPortState)
-graph.states.add(baseState)
-graph.generate_states(baseState, graph.initRequests)
-print(graph.edges)
-print(graph.states)
+# graph = TransitionSystem(3, 5, 2, [1,2,3], [2,2,2])
+# #graph.generate_states(graph.initRequests, [], graph.ports)
+# emptyPortState = [0] * len(graph.initRequests) #use for generating the base state (full init request list and all zero port state list)
+# baseState = graph.State(copy.deepcopy(graph.initRequests), emptyPortState)
+# graph.states.add(baseState)
+# graph.generate_states(baseState, graph.initRequests)
+# print(graph.edges)
+# print(graph.states)
 
