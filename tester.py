@@ -41,7 +41,7 @@ def set_tests():
     trans_set.add(transition1)
     trans_set.add(transition2)
     # print(test)
-    print(trans_set)
+    #print(trans_set)
 
 def port_tests():
     state = State(('a','b','a'), (2,3,2))
@@ -100,9 +100,13 @@ def permutation_tests(graph):
     print(list(s))
     print(counter)
 
+def tests():
+    ls = []
+    print(all(i >= 0 for i in ls))
 
-graph = reworked_graph.ReworkedGraph(3, 5, 2, ["a", "b"], [2, 2])
-set_tests()
+graph = reworked_graph.ReworkedGraph(3, 5, 2, ["a", "b"], [0, 0])
+#set_tests()
 #state_tests(graph)
+#tests()
 #tulip_tests(graph)
 #permutation_tests(graph)
