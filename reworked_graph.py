@@ -1,3 +1,10 @@
+'''
+Author information:
+Joey R. Muffoletto
+University of Texas at Austin
+jrmuff@utexas.edu
+'''
+
 import copy
 from itertools import combinations
 from itertools import product
@@ -201,7 +208,7 @@ class State(object):
     # valid label
     def _contains_expired_request(self):
         return not all(i >= 0 for i in self.time_vector)
-
+    # use hashing s.t. when I generate states, duplicates are very easily found. extremely helpful.
     def __key(self):
         port_list = []
         for key in self._port_dict:
