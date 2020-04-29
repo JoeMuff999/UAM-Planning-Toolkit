@@ -1,1 +1,1 @@
-Repository for testing automata in Python with Spot.
+Repository for testing automata in Python. Uses TuLiP which can be found here : https://github.com/tulip-control/tulip-control
