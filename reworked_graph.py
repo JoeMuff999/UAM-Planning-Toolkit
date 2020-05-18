@@ -2,6 +2,7 @@
 Author information:
 Joey R. Muffoletto
 University of Texas at Austin
+Autonomous Systems Group
 jrmuff@utexas.edu
 '''
 
@@ -12,10 +13,13 @@ from itertools import product
 REQUESTS = 0
 TIMES = 1
 
+NO_PREF = "no_pref"
+#TODO :: IMPLEMENT A WAY TO HAVE NO PORT PREFERENCE FOR A REQUEST FOR REALLOCATION PURPOSES -> believe this is already done
+#TODO :: fix bug that overflowed gets counted more than once
 
 class ReworkedGraph(object):
-    def __init__(self, requests_per_port_per_step={}, max_accepted_requests=0, request_vector=None,
-                 max_time_per_req_vector=None):
+    def __init__(self, requests_per_port_per_step={}, max_accepted_requests=0, request_vector=[],
+                 max_time_per_req_vector=[]):
 
         self.max_accepted_requests = max_accepted_requests
         self.request_vector = request_vector
@@ -23,7 +27,7 @@ class ReworkedGraph(object):
 
         assert len(max_time_per_req_vector) == len(request_vector)
 
-        self.base_state = State(tuple(copy.deepcopy(request_vector)), tuple(copy.deepcopy(max_time_per_req_vector)))
+        self.base_state = State(tuple(copy.deepcopy(request_vector)), tuple(copy.deepcopy(max_time_per_req_vector)), port_dict=requests_per_port_per_step)
 
         self.states = set()
         self.transitions = set()
@@ -47,7 +51,7 @@ class ReworkedGraph(object):
                 previous_state.scratch = True  # use so that doesn't infinitely self loop, but does allow it to recurse if first time
                 self.generate_states(previous_state, remaining_requests, port_dict)
         else:
-            choices = self.generate_choices(len(remaining_requests[0]))
+            choices = self.generate_choices(len(remaining_requests[0])) # TODO make this not be returned
             for choice in choices:
                 port_permutations = self.generate_cartesian_product(previous_state._port_dict.keys(), len(choice))
                 for port_choice in port_permutations:
@@ -68,20 +72,20 @@ class ReworkedGraph(object):
                             offset += 1
 
                     tmp = [i for i in copied_requests if i]  # remove none
-
+                    # decrease remaining capacity of ports
+                    self.update_port_states(port_dict, port_choice)
                     # check if a request was landed at a different port than asked for
                     port_violation = False
                     #check if a port is overflowed
                     port_overflowed = False
+
                     if len(choice) > 0:
                         port_violation = self.landed_different_port(copy.deepcopy(port_choice), copy.deepcopy(tmp))
-                        port_overflowed = self.overflowed_port(copy.deepcopy(port_choice))
+                        port_overflowed = self.overflowed_port(port_choice, port_dict, previous_state._port_dict)
 
 
-                    new_state = State(tuple(copy.deepcopy(remaining_requests[REQUESTS])), tuple(copy.deepcopy(remaining_requests[TIMES])), previous_state=previous_state, violated_port=port_violation, overflowed_port=port_overflowed)
 
-                    self.update_port_states(port_dict, port_choice)
-                    new_state._port_dict = copy.deepcopy(port_dict)
+                    new_state = State(tuple(copy.deepcopy(remaining_requests[REQUESTS])), tuple(copy.deepcopy(remaining_requests[TIMES])), port_dict=copy.deepcopy(port_dict), previous_state=previous_state, violated_port=port_violation, overflowed_port=port_overflowed)
 
                     self.states.add(new_state)
 
@@ -124,27 +128,27 @@ class ReworkedGraph(object):
             if request_tuple is not None:
                 if request_tuple[0] in port_choice_list:
                     port_choice_list.remove(request_tuple[0])
-                else:
+                elif request_tuple[0] != NO_PREF:
                     return True
+        return False
 
-    def overflowed_port(self, port_choice):
+    def overflowed_port(self, port_choice, port_dict, previous_port_dict):
         port_choice_list = list(port_choice)
-        local_dict = copy.deepcopy(self.port_limits)
         for port in port_choice_list:
             key = str(port)
-            local_dict[key] = local_dict[key] - 1
-            if local_dict[key] < 0:
+            if port == NO_PREF:
+                continue
+            elif port_dict[key] <= -1 and previous_port_dict[key] > port_dict[key]: #logic : if landed another at this port, and the previous state did not have this many, must be overflow
                 return True
         return False
 
-
-    def update_port_states(self, port_dict, keys_to_iterate):
-        for key in keys_to_iterate:
-            port_dict[key] += 1
-
-    def reset_port_states(self, port_dict, keys_to_deiterate):
+    def update_port_states(self, port_dict, keys_to_deiterate):
         for key in keys_to_deiterate:
             port_dict[key] -= 1
+
+    def reset_port_states(self, port_dict, keys_to_iterate):
+        for key in keys_to_iterate:
+            port_dict[key] += 1
 
     def iterate_all_requests(self, req_vec, ignore_vec, negative_vec):
         # req_vev = tuple(list('a','b'), list(2,2)) set(requests, times)
@@ -160,7 +164,7 @@ class ReworkedGraph(object):
 
 class State(object):
 
-    def __init__(self, request_vector=tuple, time_vector=tuple, previous_state=None, violated_port=False, overflowed_port=False):
+    def __init__(self, request_vector=tuple, time_vector=tuple, port_dict=dict, previous_state=None, violated_port=False, overflowed_port=False):
 
         assert type(request_vector) is tuple
         assert type(time_vector) is tuple
@@ -174,21 +178,10 @@ class State(object):
 
         self.request_vector = request_vector
         self.time_vector = time_vector
-        self._port_dict = self._generate_ports()
+        self._port_dict = port_dict
         self.labels = self._generate_labels()
 
         self.scratch = False
-
-    def _generate_ports(self):
-        dict_to_return = dict()
-        tmp_set = set()  # using this to prevent creating multiple keys for one request
-        for req in self.request_vector:
-            tmp_tuple = (req, 0)
-            assert type(tmp_tuple) is tuple
-            tmp_set.add(tmp_tuple)
-        for tup in tmp_set:
-            dict_to_return.update({tup[0]: tup[1]})
-        return dict_to_return
 
     def _generate_labels(self):
         label_tmp = []
