@@ -84,6 +84,7 @@ NO = "n"
 # 1 request added directly reduce cost
 
 # TODO :: make return tower s.t. you can easily send a list of request max times. needs to be deterministic
+# TODO :: ALGORITHM IS NOT FULLY TESTED, MAY NOT BE WORKING COMPLETELY. WORKS FOR SIMPLE EXAMPLES AT THE VERY LEAST
 def runner():
     # return_tower :: num_requests, num_ports, time_steps, port_max
     tower1 = return_tower(2, 2, 2, [1,1])
@@ -94,7 +95,7 @@ def runner():
     violation_minimized = False
     while not violation_minimized:
         for i in system:
-            print(str(i))
+            print(str(i)) #debugging
 
         system, violation_minimized = do_round(system)
 
@@ -152,6 +153,7 @@ def do_round(system):
         
 
         #remove worst request and counterparts from list
+        #all subsequent prints are very helpful
         print("pub_tower_index_list " + str(publishing_tower_index_list))
         print("worst_request_list_index " + str(worst_request_indices_list))
         print("publishing tower index " + str(publishing_tower_index))
@@ -182,10 +184,6 @@ def do_round(system):
             return system, False
 
     return system, True
-
-
-    #TODO
-
 
 def add_req_to_tower(old_tower, new_request_time):
     #copy over old tower parameters then add the new request
