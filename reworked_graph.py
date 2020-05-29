@@ -37,7 +37,7 @@ class ReworkedGraph(object):
         self.generate_states(self.base_state,
                              (copy.deepcopy(self.request_vector), copy.deepcopy(self.max_time_per_req_vector)), copy.deepcopy(self.base_state._port_dict))
 
-
+    #recursive-backtracking algorithm to populate the graph
     def generate_states(self, previous_state=None, remaining_requests=([], []), port_dict=None):
         if (len(remaining_requests[0]) == 0):  # or (not all(i >= 0 for i in remaining_requests[TIMES])):
             return
@@ -51,11 +51,12 @@ class ReworkedGraph(object):
                 previous_state.scratch = True  # use so that doesn't infinitely self loop, but does allow it to recurse if first time
                 self.generate_states(previous_state, remaining_requests, port_dict)
         else:
-            choices = self.generate_choices(len(remaining_requests[0])) # TODO make this not be returned
+            #choice = a tuple of indices from the list of remaining requests ; the request to be taken for this recursive step.
+            choices = self.generate_choices(len(remaining_requests[REQUESTS])) # TODO make this not be returned
             for choice in choices:
+                #port permutations = all possible permutations of available ports ; port_choice = port to be used for the given choice for this recursive step
                 port_permutations = self.generate_cartesian_product(previous_state._port_dict.keys(), len(choice))
                 for port_choice in port_permutations:
-
                     copied_requests = []
                     indices_of_negatives = self.generate_ignore_list(remaining_requests)
                     self.iterate_all_requests(remaining_requests, choice, indices_of_negatives)
@@ -101,7 +102,7 @@ class ReworkedGraph(object):
                             remaining_requests[TIMES].insert(i, req[TIMES])
                     self.undo_iteration_of_requests(remaining_requests, choice, indices_of_negatives)
                     self.reset_port_states(port_dict, port_choice)
-
+    #returns all possible combinations from the given requests. combination length <= self.max_accepted_requests
     def generate_choices(self, num_requests):
         base_list = [i for i in range(num_requests)]
         list_to_return = []
@@ -160,8 +161,9 @@ class ReworkedGraph(object):
         for i in range(len(req_vec[1])):
             if i not in ignore_vec and i not in negative_vec:
                 req_vec[1][i] += 1
-
-
+    def __str__(self):
+        return "Tower has requests :: " + str(self.request_vector) + " and times of " + str(self.max_time_per_req_vector)
+#nodes of the graph. represented by request vector, time vector, port_dict, and labels. see __key()
 class State(object):
 
     def __init__(self, request_vector=tuple, time_vector=tuple, port_dict=dict, previous_state=None, violated_port=False, overflowed_port=False):
@@ -182,7 +184,7 @@ class State(object):
         self.labels = self._generate_labels()
 
         self.scratch = False
-
+    #labels used for MVP
     def _generate_labels(self):
         label_tmp = []
         if not self._contains_expired_request():

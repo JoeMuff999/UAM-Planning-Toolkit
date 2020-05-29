@@ -82,13 +82,24 @@ NO = "n"
 
 # 1 request remove
 # 1 request added directly reduce cost
+
 # TODO :: make return tower s.t. you can easily send a list of request max times. needs to be deterministic
 def runner():
-    tower1 = return_tower(5, 3, 3, [1, 1, 2])
-    tower2 = return_tower(5, 3, 3, [0, 5, 0])
-    tower3 = return_tower(5, 3, 4, [0, 0, 5])
+    # return_tower :: num_requests, num_ports, time_steps, port_max
+    tower1 = return_tower(2, 2, 2, [1,1])
+    tower2 = return_tower(2, 1, 2, [3])
+    tower3 = return_tower(2, 2, 2, [0,1])
 
     system = [tower1, tower2, tower3]
+    violation_minimized = False
+    while not violation_minimized:
+        for i in system:
+            print(str(i))
+
+        system, violation_minimized = do_round(system)
+
+        print("\n new round \n")
+
 
     # worst_request1, req_list1, trace_list1 = get_worst_request(tower1)
     # worst_request2, req_list2, trace_list2 = get_worst_request(tower2)
@@ -105,62 +116,101 @@ def runner():
     #     print("Optimal cost: {}".format(trace[0]))
     #     print("State path: {}".format(trace[1]))
 
-
+#returns the new system based on the round algorithm. If violation is minimized (ie: system not altered), return True. else, return False
 def do_round(system):
     # get most expensive requests in system
 
-    worst_request_list = []
+    worst_request_indices_list = []
     accompanying_step_list = []
-    worst_cost_list = [[]]
-    publishing_tower_index_list = None
+    worst_cost_list = []
+    publishing_tower_index_list = []
 
     for index,tower in enumerate(system):
-        curr_request, curr_time, curr_cost = get_worst_request(tower)
+        curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
 
-        worst_request_list.append(curr_request)
+        worst_request_indices_list.append(curr_request_index)
         accompanying_step_list.append(curr_time)
         worst_cost_list.append(curr_cost)
+        #print(worst_cost_list)
+        publishing_tower_index_list.append(index) #used to keep track of what tower each index is aligned to
 
-        publishing_tower_index_list.append(index)
-
-    round_finished = False
-    while not round_finished:
+    for i in worst_cost_list:
+        print_formatted_cost(i)
+    while len(worst_request_indices_list) is not 0:
         # "publish" worst request
         publishing_tower_index = 0
-        published_request = 0
+        list_index = 0
+        published_request_index = 0
         cost_of_published_request = [-1, -1, -1]
         published_request_time = 0
         for index, cost in enumerate(worst_cost_list):
             if compare_levels(cost_of_published_request, cost):
-                published_request = worst_request_list[index]  # get request corresponding to cost
                 cost_of_published_request = cost
                 publishing_tower_index = publishing_tower_index_list[index]
+                published_request_index = worst_request_indices_list[index]
+                list_index = index
         
-        assert cost_of_published_request != [-1,-1,-1]
+
         #remove worst request and counterparts from list
-        del worst_request_list[publishing_tower_index]
-        del accompanying_step_list[publishing_tower_index]
-        del worst_cost_list[publishing_tower_index]
-        del publishing_tower_index_list[publishing_tower_index]
+        print("pub_tower_index_list " + str(publishing_tower_index_list))
+        print("worst_request_list_index " + str(worst_request_indices_list))
+        print("publishing tower index " + str(publishing_tower_index))
+        del worst_request_indices_list[list_index]
+        del accompanying_step_list[list_index]
+        del worst_cost_list[list_index]
+        del publishing_tower_index_list[list_index]
+
+
 
         # find which tower will accept
-        new_cost_list = [[]]
-        accepting_tower_index = 0
-        best_new_cost = [-1, -1, -1]
+        cost_of_accepting_request_list = []
+        accepting_tower_index = -1
+        max_new_cost = cost_of_published_request #supposed to be int max but this will never happen
         for index, tower in enumerate(system):
             if index != publishing_tower_index:
-                new_cost = vector_difference(cost_with_new_vec(tower, published_request_time), cost_of_published_request)
-                new_cost_list.append(new_cost)
-                if compare_levels(best_new_cost, new_cost):
-                    best_new_cost = new_cost
+                cost_of_tower_without_published_request = generate_trace(tower)[0]
+                cost_of_accepting_request = vector_difference(cost_with_new_vec(tower, published_request_time), cost_of_tower_without_published_request) #param_1 - param_2
+                cost_of_accepting_request_list.append(cost_of_accepting_request)
+                if compare_levels(cost_of_accepting_request, max_new_cost):
+                    max_new_cost = cost_of_accepting_request
                     accepting_tower_index = index
+        print("accepting tower index " + str(accepting_tower_index))
+        print("max_new_cost " + str(max_new_cost))
+        if accepting_tower_index != -1: #found a tower that will accept the request
+            system[accepting_tower_index] = add_req_to_tower(system[accepting_tower_index], published_request_time)
+            system[publishing_tower_index] = del_req_from_tower(system[publishing_tower_index], published_request_index)
+            return system, False
 
-        if best_new_cost != [-1,-1,-1]:
-            round_finished = True
+    return system, True
 
 
+    #TODO
 
 
+def add_req_to_tower(old_tower, new_request_time):
+    #copy over old tower parameters then add the new request
+    req_copy = copy.deepcopy(old_tower.request_vector)
+    time_copy = copy.deepcopy(old_tower.max_time_per_req_vector)
+    port_dict = copy.deepcopy(old_tower.port_limits)
+    req_per_step = old_tower.max_accepted_requests
+    req_copy.append('no_pref')
+    time_copy.append(new_request_time)
+
+    # generate new tower
+    new_tower = return_tower_specific(port_dict, req_per_step, req_copy, time_copy)
+    return new_tower
+
+def del_req_from_tower(old_tower, index_of_request_to_remove):
+    req_copy = copy.deepcopy(old_tower.request_vector)
+    time_copy = copy.deepcopy(old_tower.max_time_per_req_vector)
+    port_dict = copy.deepcopy(old_tower.port_limits)
+    req_per_step = old_tower.max_accepted_requests
+
+    del req_copy[index_of_request_to_remove]
+    del time_copy[index_of_request_to_remove]
+
+    new_tower = return_tower_specific(port_dict, req_per_step, req_copy, time_copy)
+    return new_tower
 
 def cost_with_new_vec(input_graph, new_request_time):
     # create new tower parameters
@@ -189,8 +239,8 @@ def cost_with_removed_vec(input_graph, index_of_request_to_remove):
     return generate_trace(new_tower)[0]
 
 
-def get_worst_request(input_graph):
-    worst_request = None
+def get_worst_request_index(input_graph):
+    worst_request_index = -1
 
     og = generate_trace(input_graph)
     original_cost = og[0]
@@ -212,17 +262,17 @@ def get_worst_request(input_graph):
         diff = vector_difference(original_cost, new_cost)
 
         if compare_levels(highest_cost_vec, diff):
-            worst_request = curr_req
+            worst_request_index = i
             worst_request_time = curr_time
             highest_cost_vec = diff
 
         end_time = time.time()
-        print("finished req :: " + str(i) + " in time " + str(end_time - start_time))
+        #print("finished req :: " + str(i) + " in time " + str(end_time - start_time))
 
-    return worst_request, worst_request_time, highest_cost_vec  # request_list, trace_list,
+    return worst_request_index, worst_request_time, highest_cost_vec  # request_list, trace_list,
 
 
-def compare_levels(orig_vec, new_vec):
+def compare_levels(orig_vec, new_vec): # if new - orig > 0 (priority based on index)
     for i in range(len(orig_vec)):
         if orig_vec[i] < new_vec[i]:
             return True
@@ -245,6 +295,8 @@ def vector_difference(l1, l2):
         diff.append(l1[i] - l2[i])
     return diff
 
+def print_formatted_cost(cost_to_print):
+    print("Optimal cost: {}".format(cost_to_print))
 
 def return_tower_specific(port_dict, req_per_step, request_vec, time_req):
     return reworked_graph.ReworkedGraph(port_dict, req_per_step, request_vec, time_req)
