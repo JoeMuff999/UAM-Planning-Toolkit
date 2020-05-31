@@ -6,90 +6,17 @@ from tulip.spec.prioritized_safety import PrioritizedSpecification
 from tulip.transys.mathset import PowerSet
 from tulip.mvp import solve as solve_mvp
 import time
-import numpy as np
-import matplotlib.pyplot as plt
-
-YES = "y"
-NO = "n"
-
-
-# def generate_system():
-# use_input_file = input("Use previously existing system? y/n \n")
-# if use_input_file == YES:
-# tower1 = reworked_graph.ReworkedGraph({"a": 1, "b" : 1, "c" : 1}, 2, ["a", "b","c"], [0, 4, 1])
-# trace_tuple1 = generate_trace(tower1)
-# tower2 = reworked_graph.ReworkedGraph({"a": 1, "b" : 1}, 1, ["a", "b","b"], [0, 2, 1])
-# trace_tuple2 = generate_trace(tower2)
-# tower3 = reworked_graph.ReworkedGraph({"a": 1, "b" : 3}, 2, ["a", "a", "b","b"], [0, 0, 1, 1])
-# trace_tuple3 = generate_trace(tower3)
-# req4 = []
-#
-# for i in range(10):
-#     if i < 50:
-#         req4.append("a")
-#     else:
-#         req4.append("a")
-# time4 = [5 for i in req4]
-#
-#
-#
-#
-# start_time = time.time()
-# tower4 = reworked_graph.ReworkedGraph({"a" : 1, "b" : 2, "c" :1}, 1, req4, time4)
-# end_time = time.time()
-# print(end_time-start_time)
-# start_time = time.time()
-# trace_tuple4 = generate_trace(tower4)
-# end_time = time.time()
-# print(end_time - start_time)
-# x = [trace_tuple1, trace_tuple2,trace_tuple3]
-# for i in x:
-#     print("Optimal cost: {}".format(i[0]))
-#     print("State path: {}".format(i[1]))
-#     print("Product path: {}".format(i[2])
-
-# hi = [[2,3,4],[5,6,7],[8,9,10]]
-# for row in range(len(hi)):
-#     x = ['%f' % i for i in hi[row]]
-#     print(x)
-# trace_tuple1 = generate_trace(tower1)
-# req_max = 3;
-# port_max = 3;
-# x = [0 for i in range(req_max)]
-# times = [x for i in range(req_max)]
-# for i in range(1, req_max):
-#     for j in range(1, port_max):
-#         if i < 5 or j < 5:
-#             tower = return_tower(i, j)
-#             start_time = time.time()
-#             generate_trace(tower)
-#             end_time = time.time()
-#             times[i][j] = end_time-start_time
-#             print("TIMES = " + str(i) + " : "+ str(j) + " time = "+ str(times[i][j]))
-# rows = ['%d requests' % i for i in range(req_max)]
-# columns = ['%d ports' % i for i in range(port_max)]
-#
-# cell_text = []
-# for row in range(req_max):
-#     cell_text.append(['%f' % i for i in times[row]])
-#
-# the_table = plt.table(cellText = cell_text, rowLabels=rows, colLabels=columns, loc='center')
-# plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
-# plt.tick_params(axis='y', which='both', right=False, left=False, labelleft=False)
-# for pos in ['right', 'top', 'bottom', 'left']:
-#     plt.gca().spines[pos].set_visible(False)
-# plt.show()
-
-# 1 request remove
-# 1 request added directly reduce cost
 
 # TODO :: make return tower s.t. you can easily send a list of request max times. needs to be deterministic
 # TODO :: ALGORITHM IS NOT FULLY TESTED, MAY NOT BE WORKING COMPLETELY. WORKS FOR SIMPLE EXAMPLES AT THE VERY LEAST
+# TODO (just a note, but wanted to make it highlighted) :: you will encounter "same labeled transition warnings "from_state---[label]---> to_state"".
+# TODO (note continued) :: This has to do with TuLiP encountering repeat transitions. It hasn't had an effect on logic thus far, so I wouldn't worry too much about it.
+# TODO (note) :: there are many print statements in this file. This is helpful debug information.
 def runner():
-    # return_tower :: num_requests, num_ports, time_steps, port_max
-    tower1 = return_tower(2, 2, 2, [1,1])
-    tower2 = return_tower(2, 1, 2, [3])
-    tower3 = return_tower(2, 2, 2, [0,1])
+    # return_tower :: num_requests, num_ports, time_steps, port_max <- parameter information
+    tower1 = return_tower(3, 3, 1, [0,1,0])
+    tower2 = return_tower(3, 1, 3, [4])
+    tower3 = return_tower(3, 3, 3, [1,1,2])
 
     system = [tower1, tower2, tower3]
     violation_minimized = False
@@ -100,22 +27,7 @@ def runner():
         system, violation_minimized = do_round(system)
 
         print("\n new round \n")
-
-
-    # worst_request1, req_list1, trace_list1 = get_worst_request(tower1)
-    # worst_request2, req_list2, trace_list2 = get_worst_request(tower2)
-    #
-    # cost_reduction1 = trace_list1[int(worst_request1)][0]
-    # cost_reduction2 = trace_list2[int(worst_request2)][0]
-    #
-    # calculate_cost_benefit(tower2, worst_request1, 3, cost_reduction1, trace_list2[0][0])
-    # for trace in trace_list1:
-    #     print("Optimal cost: {}".format(trace[0]))
-    #     print("State path: {}".format(trace[1]))
-    #
-    # for trace in trace_list2:
-    #     print("Optimal cost: {}".format(trace[0]))
-    #     print("State path: {}".format(trace[1]))
+    print("violation minimized")
 
 #returns the new system based on the round algorithm. If violation is minimized (ie: system not altered), return True. else, return False
 def do_round(system):
@@ -132,7 +44,6 @@ def do_round(system):
         worst_request_indices_list.append(curr_request_index)
         accompanying_step_list.append(curr_time)
         worst_cost_list.append(curr_cost)
-        #print(worst_cost_list)
         publishing_tower_index_list.append(index) #used to keep track of what tower each index is aligned to
 
     for i in worst_cost_list:
@@ -149,6 +60,7 @@ def do_round(system):
                 cost_of_published_request = cost
                 publishing_tower_index = publishing_tower_index_list[index]
                 published_request_index = worst_request_indices_list[index]
+                published_request_time = accompanying_step_list[index]
                 list_index = index
         
 
@@ -167,17 +79,18 @@ def do_round(system):
         # find which tower will accept
         cost_of_accepting_request_list = []
         accepting_tower_index = -1
-        max_new_cost = cost_of_published_request #supposed to be int max but this will never happen
+        min_new_cost = cost_of_published_request
         for index, tower in enumerate(system):
             if index != publishing_tower_index:
                 cost_of_tower_without_published_request = generate_trace(tower)[0]
                 cost_of_accepting_request = vector_difference(cost_with_new_vec(tower, published_request_time), cost_of_tower_without_published_request) #param_1 - param_2
                 cost_of_accepting_request_list.append(cost_of_accepting_request)
-                if compare_levels(cost_of_accepting_request, max_new_cost):
-                    max_new_cost = cost_of_accepting_request
+                if compare_levels(cost_of_accepting_request, min_new_cost):
+                    min_new_cost = cost_of_accepting_request
                     accepting_tower_index = index
         print("accepting tower index " + str(accepting_tower_index))
-        print("max_new_cost " + str(max_new_cost))
+        print("lowest_new_cost " + str(min_new_cost))
+        print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
         if accepting_tower_index != -1: #found a tower that will accept the request
             system[accepting_tower_index] = add_req_to_tower(system[accepting_tower_index], published_request_time)
             system[publishing_tower_index] = del_req_from_tower(system[publishing_tower_index], published_request_index)
