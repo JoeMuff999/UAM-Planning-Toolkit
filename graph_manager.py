@@ -1,3 +1,11 @@
+'''
+Author information:
+Joey R. Muffoletto
+University of Texas at Austin
+Autonomous Systems Group
+jrmuff@utexas.edu
+'''
+
 import reworked_graph
 import copy
 from tulip.transys import WeightedKripkeStructure as WKS
@@ -7,7 +15,6 @@ from tulip.transys.mathset import PowerSet
 from tulip.mvp import solve as solve_mvp
 import time
 
-# TODO :: make return tower s.t. you can easily send a list of request max times. needs to be deterministic
 # TODO :: ALGORITHM IS NOT FULLY TESTED, MAY NOT BE WORKING COMPLETELY. WORKS FOR SIMPLE EXAMPLES AT THE VERY LEAST
 # TODO (just a note, but wanted to make it highlighted) :: you will encounter "same labeled transition warnings "from_state---[label]---> to_state"".
 # TODO (note continued) :: This has to do with TuLiP encountering repeat transitions. It hasn't had an effect on logic thus far, so I wouldn't worry too much about it.
@@ -212,7 +219,7 @@ def print_formatted_cost(cost_to_print):
 def return_tower_specific(port_dict, req_per_step, request_vec, time_req):
     return reworked_graph.ReworkedGraph(port_dict, req_per_step, request_vec, time_req)
 
-
+# TODO :: change param "time_steps" to be a vector with len = len(num_requests) (ie: max time steps for each request)
 def return_tower(num_requests, num_ports, time_steps, port_max):
     req = []
     port_dict = {}

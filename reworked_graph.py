@@ -14,8 +14,7 @@ REQUESTS = 0
 TIMES = 1
 
 NO_PREF = "no_pref"
-#TODO :: IMPLEMENT A WAY TO HAVE NO PORT PREFERENCE FOR A REQUEST FOR REALLOCATION PURPOSES -> believe this is already done
-#TODO :: fix bug that overflowed gets counted more than once
+#TODO :: fix bug that overflowed gets counted more than once -> believe this is already done, just be aware of this possible source of error.
 
 class ReworkedGraph(object):
     def __init__(self, requests_per_port_per_step={}, max_accepted_requests=0, request_vector=[],
