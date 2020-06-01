@@ -21,9 +21,9 @@ import time
 # TODO (note) :: there are many print statements in this file. This is helpful debug information.
 def runner():
     # return_tower :: num_requests, num_ports, time_steps, port_max <- parameter information
-    tower1 = return_tower(3, 3, 1, [0,1,0])
-    tower2 = return_tower(3, 1, 3, [4])
-    tower3 = return_tower(3, 3, 3, [1,1,2])
+    tower1 = return_tower(3, 3, [1,1,1], [0,1,0])
+    tower2 = return_tower(3, 1, [3,3,3], [4])
+    tower3 = return_tower(3, 3, [3,3,3], [1,1,2])
 
     system = [tower1, tower2, tower3]
     violation_minimized = False
@@ -219,8 +219,8 @@ def print_formatted_cost(cost_to_print):
 def return_tower_specific(port_dict, req_per_step, request_vec, time_req):
     return reworked_graph.ReworkedGraph(port_dict, req_per_step, request_vec, time_req)
 
-# TODO :: change param "time_steps" to be a vector with len = len(num_requests) (ie: max time steps for each request)
-def return_tower(num_requests, num_ports, time_steps, port_max):
+
+def return_tower(num_requests, num_ports, time_vector, port_max):
     req = []
     port_dict = {}
     choices = ['%d' % i for i in range(num_ports)]
@@ -234,7 +234,7 @@ def return_tower(num_requests, num_ports, time_steps, port_max):
     for i in range(num_ports):
         key = '' + str(i)
         port_dict[key] = port_max[i]
-    time = [time_steps for i in req]
+    time = time_vector
     return reworked_graph.ReworkedGraph(port_dict, 1, req, time)
 
 
