@@ -36,10 +36,12 @@ def runner():
     while not violation_minimized:
         for i in system:
             print(str(i)) #debugging
-
+        time_start = time.time()
         system, violation_minimized = do_round(system)
+        time_end = time.time()
 
-        print("\n new round \n")
+        print("\n new round - completed in time " + str(time_end - time_start) + "\n")
+
     print("violation minimized")
 
 #returns the new system based on the round algorithm. If violation is minimized (ie: system not altered), return True. else, return False
