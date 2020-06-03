@@ -14,18 +14,24 @@ from tulip.spec.prioritized_safety import PrioritizedSpecification
 from tulip.transys.mathset import PowerSet
 from tulip.mvp import solve as solve_mvp
 import time
+# TODO (warning!) :: You may encounter an error when running this. I had to add some code to the TuLiP package to get it to work. PM ME WHEN YOU ENCOUNTER THIS ERROR!
 
 # TODO :: ALGORITHM IS NOT FULLY TESTED, MAY NOT BE WORKING COMPLETELY. WORKS FOR SIMPLE EXAMPLES AT THE VERY LEAST
 # TODO (just a note, but wanted to make it highlighted) :: you will encounter "same labeled transition warnings "from_state---[label]---> to_state"".
 # TODO (note continued) :: This has to do with TuLiP encountering repeat transitions. It hasn't had an effect on logic thus far, so I wouldn't worry too much about it.
+# TODO (note continued) :: If these prints are too annoying, you can comment out this line in "labeled_graphs.py" (line 1007) in the TuLiP package.
 # TODO (note) :: there are many print statements in this file. This is helpful debug information.
 def runner():
     # return_tower :: num_requests, num_ports, time_steps, port_max <- parameter information
+    # tower1 = return_tower(3, 3, [1,1,1], [0,1,0])
+    # tower2 = return_tower(3, 1, [3,3,3], [4])
+    # tower3 = return_tower(3, 3, [3,3,3], [1,1,2])
     tower1 = return_tower(3, 3, [1,1,1], [0,1,0])
-    tower2 = return_tower(3, 1, [3,3,3], [4])
+    tower2 = return_tower(3, 1, [3,3,3], [2])
     tower3 = return_tower(3, 3, [3,3,3], [1,1,2])
+    tower4 = return_tower(3, 3, [4,4,4], [2, 2, 2])
 
-    system = [tower1, tower2, tower3]
+    system = [tower1, tower2, tower3, tower4]
     violation_minimized = False
     while not violation_minimized:
         for i in system:
