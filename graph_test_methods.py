@@ -215,6 +215,4 @@ def run_towerB():
           + " and an average round time of " + str(average_round_timeB))
 
 tower_runtime_analysis()
-#   def __init__(self, requests_per_port_per_step={}, max_accepted_requests=0, request_vector=[],
-               #  max_time_per_req_vector=[]):
 
