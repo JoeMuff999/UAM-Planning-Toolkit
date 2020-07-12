@@ -21,30 +21,28 @@ import time
 # TODO (note continued) :: This has to do with TuLiP encountering repeat transitions. It hasn't had an effect on logic thus far, so I wouldn't worry too much about it.
 # TODO (note continued) :: If these prints are too annoying, you can comment out this line in "labeled_graphs.py" (line 1007) in the TuLiP package.
 # TODO (note) :: there are many print statements in this file. This is helpful debug information.
-def runner():
-    # return_tower :: num_requests, num_ports, time_steps, port_max <- parameter information
-    # tower1 = return_tower(3, 3, [1,1,1], [0,1,0])
-    # tower2 = return_tower(3, 1, [3,3,3], [4])
-    # tower3 = return_tower(3, 3, [3,3,3], [1,1,2])
-    tower1 = return_tower(3, 3, [1,1,1], [0,1,0])
-    tower2 = return_tower(3, 1, [3,3,3], [2])
-    tower3 = return_tower(3, 3, [3,3,3], [1,1,2])
-    tower4 = return_tower(3, 3, [4,4,4], [2, 2, 2])
 
-    system = [tower1, tower2, tower3, tower4]
+synthesis_dictionary = dict()
+worst_request_dictionary = dict()
+
+def run_minimizing_mvp(system):
+    num_rounds = 0
     violation_minimized = False
+    total_time = 0
     while not violation_minimized:
-        for i in system:
-            print(str(i)) #debugging
-        time_start = time.time()
+        for tower in system:  #debugging
+            print(str(tower))
+        time_start = time.perf_counter()
         system, violation_minimized = do_round(system)
-        time_end = time.time()
-
+        time_end = time.perf_counter()
+        num_rounds += 1
+        total_time += time_end - time_start
         print("\n new round - completed in time " + str(time_end - time_start) + "\n")
 
     print("violation minimized")
+    return total_time, num_rounds
 
-#returns the new system based on the round algorithm. If violation is minimized (ie: system not altered), return True. else, return False
+#returns the new system based on the round algorithm. Also, if violation is minimized (ie: system not altered), return True. else, return False
 def do_round(system):
     # get most expensive requests in system
 
@@ -53,15 +51,24 @@ def do_round(system):
     worst_cost_list = []
     publishing_tower_index_list = []
 
-    for index,tower in enumerate(system):
-        curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
-
+    for index, tower in enumerate(system):
+        # does worst_request_dictionary already contain the most expensive/worst request for this tower
+        if tower.base_state in worst_request_dictionary.keys():
+            curr_request_index, curr_time, curr_cost = worst_request_dictionary[tower.base_state]
+            # print("used old values")
+            # time_start = time.perf_counter()
+            # curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
+            # time_end = time.perf_counter()
+            # print("saved this many seconds " + str(time_end - time_start))
+        else:
+            curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
+            worst_request_dictionary[tower.base_state] = (curr_request_index, curr_time, curr_cost)
         worst_request_indices_list.append(curr_request_index)
         accompanying_step_list.append(curr_time)
         worst_cost_list.append(curr_cost)
         publishing_tower_index_list.append(index) #used to keep track of what tower each index is aligned to
 
-    for i in worst_cost_list:
+    for i in worst_cost_list: #debugging
         print_formatted_cost(i)
     while len(worst_request_indices_list) is not 0:
         # "publish" worst request
@@ -81,9 +88,9 @@ def do_round(system):
 
         #remove worst request and counterparts from list
         #all subsequent prints are very helpful
-        print("pub_tower_index_list " + str(publishing_tower_index_list))
-        print("worst_request_list_index " + str(worst_request_indices_list))
-        print("publishing tower index " + str(publishing_tower_index))
+        # print("pub_tower_index_list " + str(publishing_tower_index_list))
+        # print("worst_request_list_index " + str(worst_request_indices_list))
+        # print("publishing tower index " + str(publishing_tower_index))
         del worst_request_indices_list[list_index]
         del accompanying_step_list[list_index]
         del worst_cost_list[list_index]
@@ -103,9 +110,9 @@ def do_round(system):
                 if compare_levels(cost_of_accepting_request, min_new_cost):
                     min_new_cost = cost_of_accepting_request
                     accepting_tower_index = index
-        print("accepting tower index " + str(accepting_tower_index))
-        print("lowest_new_cost " + str(min_new_cost))
-        print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
+        # print("accepting tower index " + str(accepting_tower_index))
+        # print("lowest_new_cost " + str(min_new_cost))
+        # print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
         if accepting_tower_index != -1: #found a tower that will accept the request
             system[accepting_tower_index] = add_req_to_tower(system[accepting_tower_index], published_request_time)
             system[publishing_tower_index] = del_req_from_tower(system[publishing_tower_index], published_request_index)
@@ -247,6 +254,10 @@ def return_tower(num_requests, num_ports, time_vector, port_max):
 
 
 def generate_trace(graph):
+    # check if synthesis results already exist for the input graph. if so, return stored value
+    if graph.base_state in synthesis_dictionary.keys():
+        return synthesis_dictionary[graph.base_state]
+
     ts = WKS()
     ts.states.add_from(graph.states)
     ts.states.initial.add(graph.base_state)
@@ -306,10 +317,8 @@ def generate_trace(graph):
     spec.add_rule(fa2, priority=2, level=1)
 
     (cost, state_path, product_path, wpa) = solve_mvp(ts, "FINISH", spec)
-
+    synthesis_dictionary[graph.base_state] = (cost, state_path, product_path, wpa)
     # print("Optimal cost: {}".format(cost))
     # print("State path: {}".format(state_path))
     # print("Product path: {}".format(product_path))
     return (cost, state_path, product_path, wpa)
-
-runner()

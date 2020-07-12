@@ -9,6 +9,7 @@ jrmuff@utexas.edu
 import copy
 from itertools import combinations
 from itertools import product
+import time
 
 REQUESTS = 0
 TIMES = 1
@@ -26,7 +27,7 @@ class ReworkedGraph(object):
 
         assert len(max_time_per_req_vector) == len(request_vector)
 
-        self.base_state = State(tuple(copy.deepcopy(request_vector)), tuple(copy.deepcopy(max_time_per_req_vector)), port_dict=requests_per_port_per_step)
+        self.base_state = State(tuple(request_vector), tuple(max_time_per_req_vector), port_dict=requests_per_port_per_step)
 
         self.states = set()
         self.transitions = set()
@@ -34,7 +35,7 @@ class ReworkedGraph(object):
         self.port_limits = requests_per_port_per_step
         self.states.add(self.base_state)
         self.generate_states(self.base_state,
-                             (copy.deepcopy(self.request_vector), copy.deepcopy(self.max_time_per_req_vector)), copy.deepcopy(self.base_state._port_dict))
+                             (list(self.request_vector), list(self.max_time_per_req_vector)), copy.copy(self.base_state._port_dict))
 
     #recursive-backtracking algorithm to populate the graph
     def generate_states(self, previous_state=None, remaining_requests=([], []), port_dict=None):
@@ -78,14 +79,12 @@ class ReworkedGraph(object):
                     port_violation = False
                     #check if a port is overflowed
                     port_overflowed = False
-
                     if len(choice) > 0:
-                        port_violation = self.landed_different_port(copy.deepcopy(port_choice), copy.deepcopy(tmp))
+                        port_violation = self.landed_different_port(port_choice, list(tmp))
                         port_overflowed = self.overflowed_port(port_choice, port_dict, previous_state._port_dict)
 
 
-
-                    new_state = State(tuple(copy.deepcopy(remaining_requests[REQUESTS])), tuple(copy.deepcopy(remaining_requests[TIMES])), port_dict=copy.deepcopy(port_dict), previous_state=previous_state, violated_port=port_violation, overflowed_port=port_overflowed)
+                    new_state = State(tuple(remaining_requests[REQUESTS]), tuple(remaining_requests[TIMES]), port_dict=copy.copy(port_dict), previous_state=previous_state, violated_port=port_violation, overflowed_port=port_overflowed)
 
                     self.states.add(new_state)
 
@@ -101,6 +100,8 @@ class ReworkedGraph(object):
                             remaining_requests[TIMES].insert(i, req[TIMES])
                     self.undo_iteration_of_requests(remaining_requests, choice, indices_of_negatives)
                     self.reset_port_states(port_dict, port_choice)
+
+
     #returns all possible combinations from the given requests. combination length <= self.max_accepted_requests
     def generate_choices(self, num_requests):
         base_list = [i for i in range(num_requests)]
@@ -180,7 +181,8 @@ class State(object):
         self.request_vector = request_vector
         self.time_vector = time_vector
         self._port_dict = port_dict
-        self.labels = self._generate_labels()
+        self._port_tuple = tuple(port_dict.values()) #for hashing optimization in __key()
+        self.labels = self._generate_labels() #tuple
 
         self.scratch = False
     #labels used for MVP
@@ -198,18 +200,13 @@ class State(object):
             label_tmp.append("WRONG_PORT")
         if self.overflowed_port:
             label_tmp.append("OVERFLOWED_PORT")
-        return label_tmp
+        return tuple(label_tmp)
     # valid label
     def _contains_expired_request(self):
         return not all(i >= 0 for i in self.time_vector)
     # use hashing s.t. when I generate states, duplicates are very easily found. extremely helpful.
     def __key(self):
-        port_list = []
-        for key in self._port_dict:
-            port_list.append(self._port_dict[key])
-        port_tuple = tuple(port_list)
-        label_tuple = tuple(self.labels)
-        return (self.request_vector, self.time_vector, port_tuple, label_tuple)
+        return (self.request_vector, self.time_vector, self._port_tuple, self.labels)
 
     def __hash__(self):
         return hash(self.__key())
