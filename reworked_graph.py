@@ -182,11 +182,12 @@ class State(object):
         self.time_vector = time_vector
         self._port_dict = port_dict
         self._port_tuple = tuple(port_dict.values()) #for hashing optimization in __key()
-        self.labels = self._generate_labels() #tuple
+        self.labels = self.generate_labels() #tuple
 
         self.scratch = False
+
     #labels used for MVP
-    def _generate_labels(self):
+    def generate_labels(self):
         label_tmp = []
         if not self._contains_expired_request():
             if self.previous_state is not None: #add this extra check so that states with no requests in them aren't automatically valid

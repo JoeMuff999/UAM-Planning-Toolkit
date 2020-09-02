@@ -24,8 +24,138 @@ import time
 
 synthesis_dictionary = dict()
 worst_request_dictionary = dict()
+system_timings = []
 
-def run_minimizing_mvp(system):
+def get_optimal_trace_with_new_request(orig_trace, new_req):
+
+    assert(type(new_req) == tuple)
+    assert(type(orig_trace) == list)
+    assert isinstance(orig_trace[0], reworked_graph.State)
+
+    #give each possibility its own trace for now to simplify
+    new_traces = list()
+    for index in range(len(orig_trace)):
+        new_traces.append(orig_trace)
+
+    #get port with highest remaining capacity (can assume this would be the optimal state)
+    final_state = new_traces[0][len(new_traces[0])-1]
+    optimal_port_key = None
+    highest_remaining_capacity = -999 # if anything is lower than this i lose
+    for key in final_state._port_dict:
+        if final_state[key] > highest_remaining_capacity:
+            highest_remaining_capacity = final_state[key]
+            optimal_port_key = key
+
+    assert optimal_port_key is not None
+
+    for index, trace in enumerate(new_traces):
+        #get the copy of the state before the branch to use for the branched state
+        copy_of_state_before_branch = copy.deepcopy(trace[index])
+
+        # "take" new request
+        # to all requests before index, add the new request
+        for state in trace[:index+1]:
+            assert isinstance(state, reworked_graph.State)
+            new_req_vector = copy.copy(state.request_vector)
+            new_time_vector = copy.copy(state.time_vector)
+            new_req_vector.append(new_req[0])
+            new_time_vector.append(new_req[1])
+            #safely edit state by creating a whole new one (state should be IMMUTABLE!)
+            state = reworked_graph.State(
+                new_req_vector,
+                new_time_vector,
+                state._port_dict,
+                state.previous_state,
+                state.violated_port,
+                state.overflowed_port
+            )
+        #for all requests after index, decrease time remaining decrease port capacity for new_req's chosen port
+        for state in trace[index:]:
+            assert isinstance(state, reworked_graph.State)
+            new_time_vector = copy.copy(state.time_vector)
+            new_port_dict = copy.copy(state._port_dict)
+
+            for index_inner in range(len(new_time_vector)):
+                new_time_vector[index_inner] -= 1
+            #safely edit state by creating a whole new one (state should be IMMUTABLE!)
+            new_port_dict[optimal_port_key] -= 1
+            state = reworked_graph.State(
+                state.request_vector,
+                new_time_vector,
+                new_port_dict,
+                state.previous_state,
+                state.violated_port,
+                state.overflowed_port
+            )
+
+        #TODO when creating the new request at index, make sure you don't be dumb and forget to set labels
+        #TODO you will need to create a method which checks for OVERFLOW!!!!!, wrong port is probably fine because its no_pref
+        #TODO when creating the new node its the same as original except for the port and labels
+        assert isinstance(copy_of_state_before_branch, reworked_graph.State)
+
+        copy_of_state_before_branch._port_dict[optimal_port_key] -= 1 #this will not check for overflowed port!
+
+        branch_state = reworked_graph.State(
+            copy_of_state_before_branch.request_vector,
+            copy_of_state_before_branch.time_vector,
+            copy_of_state_before_branch._port_dict,
+        )
+
+#TODO YOU WILL NEED TO GO THROUGH AND CHANGE THE PREVIOUS_STATE FOR EACH NODE THAT WAS DISRUPTED BY THE CHANGE
+
+#TODO remove this please :)
+# def bandaid_check_overflow(state):
+#     assert isinstance(state, reworked_graph.State)
+#     for key in state._port_dict.keys():
+#         if state.previous_state is None:
+#             state.previous_state =
+#         elif state._port_dict[key] < state.previous_state._port_dict[key]:
+#             if state._port_dict[key] < 0:
+#                 return True
+
+
+def rollout_monte_carlo(trace, index, req_to_add):
+    # add the new request to the state from which we will build the new graph
+    state_at_index = copy.deepcopy(trace[index])
+
+    assert isinstance(state_at_index, reworked_graph.State)
+
+    updated_request_vector = list(copy.copy(state_at_index.request_vector))
+    updated_time_vector = list(copy.copy(state_at_index.time_vector))
+
+    updated_request_vector.append(req_to_add[0])
+    updated_time_vector.append(req_to_add[1]-index)
+
+    state_at_index = reworked_graph.State(
+        tuple(updated_request_vector),
+        tuple(updated_time_vector),
+        state_at_index._port_dict,
+        state_at_index.previous_state,
+        state_at_index.violated_port,
+        state_at_index.overflowed_port
+    )
+    subtrace_before_index = copy.deepcopy(trace[:index]) # cut out part of trace before index
+
+    resultant_graph = reworked_graph.ReworkedGraph(
+        state_at_index._port_dict,
+        1,
+        list(state_at_index.request_vector),
+        list(state_at_index.time_vector)
+    )
+
+    for index, state in enumerate(subtrace_before_index):
+        if index+1 < len(subtrace_before_index):
+            resultant_graph.transitions.add((state, "SEE_GRAPH_MANAGER", subtrace_before_index[index+1]))
+        else:
+            resultant_graph.transitions.add((state, "SEE_GRAPH_MANAGER", resultant_graph.base_state))
+        resultant_graph.states.add(state)
+    if index > 0:
+        resultant_graph.base_state = copy.deepcopy(subtrace_before_index[0])
+
+    return resultant_graph
+
+
+def run_minimizing_mvp(system, rollout_index=1):
     num_rounds = 0
     violation_minimized = False
     total_time = 0
@@ -33,17 +163,39 @@ def run_minimizing_mvp(system):
         for tower in system:  #debugging
             print(str(tower))
         time_start = time.perf_counter()
-        system, violation_minimized = do_round(system)
+        system_timings.append([])
+        for tower in system:
+            system_timings[num_rounds].append([])
+        system, violation_minimized = do_round(system, num_rounds, rollout_index)
         time_end = time.perf_counter()
-        num_rounds += 1
         total_time += time_end - time_start
-        print("\n new round - completed in time " + str(time_end - time_start) + "\n")
+        print("\n new round - completed in time " + str(time_end - time_start))
+        print("\tround " + str(num_rounds) + " breakdown :: ") #(tower number) | (time to find most expensive request in tower) | (time to synthesize with published request)")
+
+        for tower_index in range(len(system_timings[0])):
+            if system_timings[num_rounds][tower_index][1] == 0:
+                print("\t tower " + str(tower_index) + " took " + str(system_timings[num_rounds][tower_index][0]) + " to find most expensive request and took " + str(system_timings[num_rounds][tower_index][1]) + " to synthesize with published request <--- publishing tower")
+            else:
+                print("\t tower " + str(tower_index) + " took " + str(system_timings[num_rounds][tower_index][0]) + " to find most expensive request and took " + str(system_timings[num_rounds][tower_index][1]) + " to synthesize with published request")
+        print("")
+        num_rounds += 1
 
     print("violation minimized")
+    print("round breakdown average")
+    cumulative_ERFind_time = [0 for i in range(len(system_timings[0]))]
+    cumulative_PRTest_time = [0 for i in range(len(system_timings[0]))]
+    for round_index in range(len(system_timings)):
+        for tower_index in range(len(system_timings[0])):
+            cumulative_ERFind_time[tower_index] += system_timings[round_index][tower_index][0]
+            cumulative_PRTest_time[tower_index] += system_timings[round_index][tower_index][1]
+    for tower_index in range(len(system_timings[0])):
+        print("tower " + str(tower_index) + " expensive request cumulative : " + str(cumulative_ERFind_time[tower_index]) + " ,published request synthesis cumulative : " + str(cumulative_PRTest_time[tower_index]))
+
+
     return total_time, num_rounds
 
 #returns the new system based on the round algorithm. Also, if violation is minimized (ie: system not altered), return True. else, return False
-def do_round(system):
+def do_round(system, round_index, rollout_index):
     # get most expensive requests in system
 
     worst_request_indices_list = []
@@ -53,6 +205,7 @@ def do_round(system):
 
     for index, tower in enumerate(system):
         # does worst_request_dictionary already contain the most expensive/worst request for this tower
+        time_start = time.perf_counter()
         if tower.base_state in worst_request_dictionary.keys():
             curr_request_index, curr_time, curr_cost = worst_request_dictionary[tower.base_state]
             # print("used old values")
@@ -63,6 +216,9 @@ def do_round(system):
         else:
             curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
             worst_request_dictionary[tower.base_state] = (curr_request_index, curr_time, curr_cost)
+        time_end = time.perf_counter()
+        system_timings[round_index][index].append(time_end-time_start)
+
         worst_request_indices_list.append(curr_request_index)
         accompanying_step_list.append(curr_time)
         worst_cost_list.append(curr_cost)
@@ -70,6 +226,9 @@ def do_round(system):
 
     for i in worst_cost_list: #debugging
         print_formatted_cost(i)
+    for index in range(len(system)): #prep system timing list
+        system_timings[round_index][index].append(0)
+
     while len(worst_request_indices_list) is not 0:
         # "publish" worst request
         publishing_tower_index = 0
@@ -84,7 +243,6 @@ def do_round(system):
                 published_request_index = worst_request_indices_list[index]
                 published_request_time = accompanying_step_list[index]
                 list_index = index
-        
 
         #remove worst request and counterparts from list
         #all subsequent prints are very helpful
@@ -104,15 +262,23 @@ def do_round(system):
         min_new_cost = cost_of_published_request
         for index, tower in enumerate(system):
             if index != publishing_tower_index:
-                cost_of_tower_without_published_request = generate_trace(tower)[0]
-                cost_of_accepting_request = vector_difference(cost_with_new_vec(tower, published_request_time), cost_of_tower_without_published_request) #param_1 - param_2
+                time_start = time.perf_counter()
+                cost_of_tower_without_published_request, trace, empty, empty1 = generate_trace(tower)
+                if 1 >= len(trace):
+                    cost_of_accepting_request = vector_difference(cost_with_new_vec(tower, published_request_time), cost_of_tower_without_published_request) #param_1 - param_2
+                else:
+                    cost_of_accepting_request = vector_difference(generate_trace(rollout_monte_carlo(trace, rollout_index, ('no_pref', published_request_time)), True)[0], cost_of_tower_without_published_request) #param_1 - param_2
+                #prevent infinite runs. cost_of_accepting_request won't have transition cost so we need to add a penalty so it won't swap if equal
+                cost_of_accepting_request[len(cost_of_accepting_request)-1]+=1
+                time_end = time.perf_counter()
+                system_timings[round_index][index][1] += (time_end - time_start)
                 cost_of_accepting_request_list.append(cost_of_accepting_request)
                 if compare_levels(cost_of_accepting_request, min_new_cost):
                     min_new_cost = cost_of_accepting_request
                     accepting_tower_index = index
-        # print("accepting tower index " + str(accepting_tower_index))
-        # print("lowest_new_cost " + str(min_new_cost))
-        # print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
+        print("accepting tower index " + str(accepting_tower_index))
+        print("lowest_new_cost " + str(min_new_cost))
+        print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
         if accepting_tower_index != -1: #found a tower that will accept the request
             system[accepting_tower_index] = add_req_to_tower(system[accepting_tower_index], published_request_time)
             system[publishing_tower_index] = del_req_from_tower(system[publishing_tower_index], published_request_index)
@@ -231,6 +397,9 @@ def vector_difference(l1, l2):
 def print_formatted_cost(cost_to_print):
     print("Optimal cost: {}".format(cost_to_print))
 
+def print_formatted_trace_path(trace_to_print):
+    print("State path: {}".format(trace_to_print))
+
 def return_tower_specific(port_dict, req_per_step, request_vec, time_req):
     return reworked_graph.ReworkedGraph(port_dict, req_per_step, request_vec, time_req)
 
@@ -252,11 +421,12 @@ def return_tower(num_requests, num_ports, time_vector, port_max):
     time = time_vector
     return reworked_graph.ReworkedGraph(port_dict, 1, req, time)
 
-
-def generate_trace(graph):
+#TODO -> make it so that generate_trace doesn't need a "graph" class as parameter. (ie: just give it a set of states, trans, and labels)
+def generate_trace(graph, override=False):
     # check if synthesis results already exist for the input graph. if so, return stored value
-    if graph.base_state in synthesis_dictionary.keys():
-        return synthesis_dictionary[graph.base_state]
+    if not override:
+        if graph.base_state in synthesis_dictionary.keys():
+            return synthesis_dictionary[graph.base_state]
 
     ts = WKS()
     ts.states.add_from(graph.states)

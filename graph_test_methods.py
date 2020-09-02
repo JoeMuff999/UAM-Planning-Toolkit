@@ -136,16 +136,17 @@ def tests():
 def tower_runtime_analysis():
     #reset dictionaries because global
     run_towerA()
-    clear_gm_dicts()
+    reset_gm_globals()
     run_towerB()
-    clear_gm_dicts()
+    reset_gm_globals()
     run_towerC()
-    clear_gm_dicts()
+    reset_gm_globals()
     run_towerD()
 
-def clear_gm_dicts():
+def reset_gm_globals():
     gm.synthesis_dictionary.clear()
     gm.worst_request_dictionary.clear()
+    gm.system_timings.clear()
 
 def run_towerD():
 
@@ -165,7 +166,7 @@ def run_towerD():
 
     print("\nsystemD with six towers completed in time " + str(time_end - time_start) + "\n"
           + "With a total runtime of " + str(total_timeD) + ", total round count of " + str(total_roundsD)
-          + " and an average round time of " + str(average_round_timeD))
+          + " and an average round time of " + str(average_round_timeD) + "\n")
 
 def run_towerC():
 
@@ -182,7 +183,7 @@ def run_towerC():
     average_round_timeC = total_timeC/total_roundsC
     print("\nsystemC with five towers completed in time " + str(time_end - time_start) + "\n"
           + "With a total runtime of " + str(total_timeC) + ", total round count of " + str(total_roundsC)
-          + " and an average round time of " + str(average_round_timeC))
+          + " and an average round time of " + str(average_round_timeC)+ "\n")
 
 def run_towerA():
 
@@ -197,7 +198,7 @@ def run_towerA():
     average_round_timeA = total_timeA / total_roundsA
     print("\nsystemA with three towers completed in time " + str(time_end - time_start) + "\n"
           + "With a total runtime of " + str(total_timeA) + ", total round count of " + str(total_roundsA)
-          + "and an average round time of " + str(average_round_timeA) + "\n")
+          + " and an average round time of " + str(average_round_timeA) + "\n")
 def run_towerB():
 
     towerB1 = gm.return_tower(3, 3, [1,1,1], [0,1,0])
@@ -212,7 +213,37 @@ def run_towerB():
     average_round_timeB = total_timeB/total_roundsB
     print("\nsystemB with four towers completed in time " + str(time_end - time_start) + "\n"
           + "With a total runtime of " + str(total_timeB) + ", total round count of " + str(total_roundsB)
-          + " and an average round time of " + str(average_round_timeB))
+          + " and an average round time of " + str(average_round_timeB)+ "\n")
 
-tower_runtime_analysis()
+def test_rw_graph_function():
+    state = State(('a', 'b', 'a'), (2, 3, 2), {'a': 2, 'b': 3})
+    state.add_request('5', 5)
+    print(str(state))
+
+def test_slice_notation():
+    test_list = [0,1,2,3,4,5]
+    index = 0
+    for number in test_list[:index+1]:
+        print(number)
+
+def test_graph_manager_heuristic():
+    test_tower = gm.return_tower(3, 3, [1,1,1], [0,1,0])
+    (cost, state_path, product_path, wpa) = gm.generate_trace(test_tower)
+    gm.print_formatted_trace_path(state_path)
+    #gm.get_optimal_trace_with_new_request(state_path)
+
+def test_rollout_monte():
+    test_tower = gm.return_tower(2, 2, [2, 1], [1, 0])
+    (cost, state_path, product_path, wpa) = gm.generate_trace(test_tower)
+    #wpa.plot()
+    resultant_test_tower = gm.rollout_monte_carlo(state_path, 2, ('no_pref', 2))
+    (cost, state_path, product_path, wpa2) = gm.generate_trace(resultant_test_tower, True)
+    wpa2.plot()
+
+
+#test_slice_notation()
+#test_graph_manager_heuristic()
+#test_rw_graph_function()
+#tower_runtime_analysis()
+#run_towerD()
 
