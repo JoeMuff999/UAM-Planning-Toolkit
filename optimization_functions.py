@@ -40,3 +40,5 @@ def get_randomized_system():
         #print("tower " + str(i) + " : " + str(tower_tuple))
     return system
 
+
+
