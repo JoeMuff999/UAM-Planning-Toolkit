@@ -144,9 +144,7 @@ def tower_runtime_analysis():
     run_towerD()
 
 def reset_gm_globals():
-    gm.synthesis_dictionary.clear()
-    gm.worst_request_dictionary.clear()
-    gm.system_timings.clear()
+    gm.reset_globals()
 
 def run_towerD():
 

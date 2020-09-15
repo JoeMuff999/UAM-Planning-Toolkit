@@ -1,0 +1,2 @@
+run_index,num_towers,max_num_requests,average_runtime
+0,3,4,18.618314950000002

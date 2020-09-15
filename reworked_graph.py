@@ -162,7 +162,7 @@ class ReworkedGraph(object):
             if i not in ignore_vec and i not in negative_vec:
                 req_vec[1][i] += 1
     def __str__(self):
-        return "Tower has requests :: " + str(self.request_vector) + " and times of " + str(self.max_time_per_req_vector)
+        return "Tower has requests :: " + str(self.request_vector) + " and times of " + str(self.max_time_per_req_vector) + " and ports of " + str(self.port_limits)
 #nodes of the graph. represented by request vector, time vector, port_dict, and labels. see __key()
 class State(object):
 
