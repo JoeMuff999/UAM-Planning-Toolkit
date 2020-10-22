@@ -22,22 +22,25 @@ import numpy as np
 # In[2]:
 #default values
 TOWER_MIN = 3
-TOWER_MAX = 8
+TOWER_MAX = 11
 REQUEST_MIN = 1
 REQUEST_MAX = 8
-RUNS_PER_DATA_POINT = 5
-#take in command line parameters 
+RUNS_PER_DATA_POINT = 15
+#take in command line parameters
 if len(sys.argv) > 1:
-    TOWER_MIN = sys.argv[1]
+    TOWER_MIN = int(sys.argv[1])
 if len(sys.argv) > 2:
-    TOWER_MAX = sys.argv[2]
+    TOWER_MAX = int(sys.argv[2])+1
 if len(sys.argv) > 3:
-    TOWER_MAX = sys.argv[3]
+    REQUEST_MIN = int(sys.argv[3])
 if len(sys.argv) > 4:
-    TOWER_MAX = sys.argv[4]
+    REQUEST_MAX = int(sys.argv[4])+1
 if len(sys.argv) > 5:
-    TOWER_MAX = sys.argv[5]
-
+    RUNS_PER_DATA_POINT = int(sys.argv[5])
+if TOWER_MIN >= TOWER_MAX:
+    print("TOWER_MIN >= TOWER_MAX -> SOLUTION : make your first command line argument be numerically less than your second")
+if REQUEST_MIN >= REQUEST_MAX:
+    print("REQUEST_MIN >= REQUEST_MAX -> SOLUTION : make your third command line argument be numerically less than your fourth")
 # TOWER_MIN = 3
 # TOWER_MAX = 4
 # REQUEST_MIN = 4
@@ -108,7 +111,6 @@ timings_buffer = copy.deepcopy(system_timings)
 
 # In[70]:
 
-
 #calculate standard deviations
 std_deviation_per_tower_per_request_max = list()
 for tower_num in range(TOWER_MIN, TOWER_MAX):
@@ -137,7 +139,8 @@ plt.xlabel('Max Number of Requests')
 plt.xticks(x)
 plt.ylabel('Runtime (s)')
 plt.legend(title='Number of towers:')
-plt.savefig('data\\runtime_vs_size.png',dpi=216)
+plt.show()
+# plt.savefig('data\\runtime_vs_size.png',dpi=216)
 
 
 # In[81]:
@@ -192,22 +195,23 @@ ax = plt.axes()
 ax.set_xticklabels(x)
 ax.set_xticks(x_positions)
 plt.ylabel('Runtime (s)')
-plt.savefig('data\\runtime_vs_size_boxplot.png',dpi=216)
+plt.show()
+# plt.savefig('data\\runtime_vs_size_boxplot.png',dpi=216)
 
 
 # In[243]:
 
 
 #generate time for x requests for min through max towers
-REQUESTS_TO_TEST = 5
+REQUESTS_TO_TEST = REQUEST_MAX
 REQUEST_INDEX = REQUESTS_TO_TEST - 1
 
-RUNS_TO_DO = 15
+RUNS_TO_DO = RUNS_PER_DATA_POINT
 graph_manager.reset_globals()
 optimization_functions.set_seed(10)
 
 timings_for_x_requests_per_tower = list()
-for tower_count in range(TOWER_MIN, 11):
+for tower_count in range(TOWER_MIN, TOWER_MAX):
     timings_for_x_requests_per_tower.append([])
     for run in range(RUNS_TO_DO):   
         system = optimization_functions.get_randomized_system(
@@ -226,7 +230,7 @@ for tower_count in range(TOWER_MIN, 11):
 graph_manager.reset_globals()
 optimization_functions.set_seed(50)
 
-for tower_count in range(TOWER_MIN, 11):
+for tower_count in range(TOWER_MIN, TOWER_MAX):
     timings_for_x_requests_per_tower.append([])
     for run in range(RUNS_TO_DO):   
         system = optimization_functions.get_randomized_system(
@@ -251,7 +255,7 @@ timings_for_x_requests_buffer = copy.deepcopy(timings_for_x_requests_per_tower)
 #time per round per tower vs. number of towers for 5 requests
 #timings buffer, per number_towers per request_max per system per round per tower per type of timing 
 #show average round runtime vs time number of towers for 5 request
-TOWER_MAX = 11
+# TOWER_MAX = 11
 # print(timings_for_x_requests_buffer)
 round_times_per_tower_count = [[] for i in range(TOWER_MIN, TOWER_MAX)]
 max_round_times_per_tower_count = [[] for i in range(TOWER_MIN, TOWER_MAX)]
@@ -305,7 +309,8 @@ ax.set_xticklabels(xlabels)
 ax.set_xticks(x_positions)
 plt.ylabel('Runtime Per Iteration (s)')
 plt.xlabel('Number of Vertihubs')
-plt.savefig('data\\runtime_vs_size_boxplot_requests_static.png',dpi=1024)
+plt.show()
+# plt.savefig('data\\runtime_vs_size_boxplot_requests_static.png',dpi=1024)
 
 
 # In[249]:
@@ -343,7 +348,7 @@ for i in range(len(max_round_times_per_tower_count)):
 #             box.set(color='lightgreen')
 
 
-xlabels = [i for i in range(TOWER_MIN, 11)]
+xlabels = [i for i in range(TOWER_MIN, TOWER_MAX)]
 x_positions = [i for i in range(TOWER_MAX-TOWER_MIN)]
 ax = plt.axes()
 
@@ -352,7 +357,8 @@ ax.set_xticks(x_positions)
 plt.gcf().subplots_adjust(bottom=0.15)
 plt.ylabel('Max Runtime Per Iteration (s)', fontsize=18)
 plt.xlabel('Number of Vertihubs', fontsize=18)
-plt.savefig('data\\max_runtime_vs_size_boxplot_requests_static.png',dpi=1024)
+plt.show()
+# plt.savefig('data\\max_runtime_vs_size_boxplot_requests_static.png',dpi=1024)
 
 
 # In[284]:
@@ -415,7 +421,7 @@ plt.legend(handles=patches)
 #             box.set(color='lightgreen')
 
 
-xlabels = [i for i in range(TOWER_MIN, 11)]
+xlabels = [i for i in range(TOWER_MIN, TOWER_MAX)]
 x_positions = [i for i in range(TOWER_MAX-TOWER_MIN)]
 
 ax1.set_xticklabels(xlabels)
@@ -424,7 +430,8 @@ plt.gcf().subplots_adjust(bottom=0.15)
 ax1.set_ylabel('Max Runtime Per Iteration (s)', fontsize=18)
 ax1.set_xlabel('Number of Vertihubs', fontsize=18)
 ax2.set_ylabel('Average Iterations Per Round',fontsize=18)
-plt.savefig('data\\max_runtime_vs_size_boxplot_requests_static_with_iterations.png',dpi=1024)
+plt.show()
+# plt.savefig('data\\max_runtime_vs_size_boxplot_requests_static_with_iterations.png',dpi=1024)
 
 
 # In[253]:
@@ -457,7 +464,7 @@ for i in range(len(max_round_times_per_tower_count)):
 #             box.set(color='lightgreen')
 
 
-xlabels = [i for i in range(TOWER_MIN, 11)]
+xlabels = [i for i in range(TOWER_MIN, TOWER_MAX)]
 x_positions = [i for i in range(TOWER_MAX-TOWER_MIN)]
 ax = plt.axes()
 
@@ -466,7 +473,8 @@ ax.set_xticks(x_positions)
 plt.gcf().subplots_adjust(bottom=0.15)
 plt.ylabel('Number of Iterations (s)', fontsize=18)
 plt.xlabel('Number of Vertihubs', fontsize=18)
-plt.savefig('data\\iteration_count_vs_size_boxplot_requests_static.png',dpi=1024)
+plt.show()
+# plt.savefig('data\\iteration_count_vs_size_boxplot_requests_static.png',dpi=1024)
 
 
 # In[136]:
@@ -548,8 +556,8 @@ for i in range(len(level_0_cost_per_tower_per_round)):
 #     dummy_ax.set_xticklabels(x_axis)
 #     dummy_ax.set_yticklabels([i for i in range(0,3)])
 
-
-    plt.savefig('data\\cost_vs_iteration\\cost_vs_iteration_' + str(i) + '.png',dpi=1024,Transparent=True)
+    plt.show()
+    # plt.savefig('data\\cost_vs_iteration\\cost_vs_iteration_' + str(i) + '.png',dpi=1024,Transparent=True)
 
 dummy_fig,dummy_ax = plt.subplots()
 dummy_ax.plot(x_axis, level_0_cost_per_round, label="level 0")
@@ -561,7 +569,8 @@ dummy_ax.set_ylabel("Cost",fontsize=18)
 y_ticks_big = np.arange(0,13,2)
 dummy_ax.set_yticks(y_ticks_big)
 dummy_ax.set_xticks(x_ticks)
-plt.savefig('data\\cost_vs_iteration\\cost_vs_iteration_big_fig.png',dpi=1024,Transparent=True)
+plt.show()
+# plt.savefig('data\\cost_vs_iteration\\cost_vs_iteration_big_fig.png',dpi=1024,Transparent=True)
 
 # dummy_ax.set_xticklabels(x_axis)
 # dummy_ax.set_yticklabels([i for i in range(0,12)])
@@ -599,7 +608,8 @@ big_ax.set_ylabel("Cost",fontsize=18)
 big_ax.set_xticks(x_ticks)
 y_ticks_big = np.arange(0,13,3)
 big_ax.set_yticks(y_ticks_big)
-plt.savefig('data\\cost_vs_iteration\\cost_vs_iteration_compiled.png',dpi=1024)
+plt.show()
+# plt.savefig('data\\cost_vs_iteration\\cost_vs_iteration_compiled.png',dpi=1024)
 # plt.step(x_axis, level_0_cost_per_round, label="level 0", where="post")
 # plt.step(x_axis, level_1_cost_per_round, label="level 1",where="post")
 # plt.xticks(x_axis)
