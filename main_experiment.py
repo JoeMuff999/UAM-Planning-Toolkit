@@ -20,13 +20,24 @@ import numpy as np
 
 
 # In[2]:
-
-
+#default values
 TOWER_MIN = 3
 TOWER_MAX = 8
 REQUEST_MIN = 1
 REQUEST_MAX = 8
 RUNS_PER_DATA_POINT = 5
+#take in command line parameters 
+if len(sys.argv) > 1:
+    TOWER_MIN = sys.argv[1]
+if len(sys.argv) > 2:
+    TOWER_MAX = sys.argv[2]
+if len(sys.argv) > 3:
+    TOWER_MAX = sys.argv[3]
+if len(sys.argv) > 4:
+    TOWER_MAX = sys.argv[4]
+if len(sys.argv) > 5:
+    TOWER_MAX = sys.argv[5]
+
 # TOWER_MIN = 3
 # TOWER_MAX = 4
 # REQUEST_MIN = 4
@@ -81,18 +92,18 @@ timings_buffer = copy.deepcopy(system_timings)
 # In[5]:
 
 
-data = open("C:\\Users\\Joey\\PycharmProjects\\Automata-Testing\\data\\base_results_new.txt", "w")
-data.write("run_index,num_towers,max_num_requests,average_runtime\n")
-run_index = 0
-
-for num_towers, tower in enumerate(data_buffer, start=TOWER_MIN):
-    for index in range(len(tower)):
-        data.write(str(run_index) + "," +
-              str(num_towers) + "," +
-              str(index + REQUEST_MIN) + "," +
-              str(tower[index]) + "\n"
-             )
-data.close()
+# data = open("C:\\Users\\Joey\\PycharmProjects\\Automata-Testing\\data\\base_results_new.txt", "w")
+# data.write("run_index,num_towers,max_num_requests,average_runtime\n")
+# run_index = 0
+#
+# for num_towers, tower in enumerate(data_buffer, start=TOWER_MIN):
+#     for index in range(len(tower)):
+#         data.write(str(run_index) + "," +
+#               str(num_towers) + "," +
+#               str(index + REQUEST_MIN) + "," +
+#               str(tower[index]) + "\n"
+#              )
+# data.close()
 
 
 # In[70]:
