@@ -510,7 +510,7 @@ for round_index in range(len(specific_buffer)):
         level_0_cost_per_round[round_index] += vec[0]
         level_1_cost_per_round[round_index] += vec[1]
 # plt.figure(dpi=40)
-# x_axis = [i for i in range(num_rounds)]
+x_axis = [i for i in range(num_rounds)]
 # plt.step(x_axis, level_0_cost_per_round, label="level 0", where="post")
 # plt.step(x_axis, level_1_cost_per_round, label="level 1",where="post")
 # plt.xticks(x_axis)
