@@ -8,7 +8,7 @@
 # for a system with n towers, determine its synthesis time for 1 through x request max
 import sys
 import os
-sys.path.insert(0, os.path.abspath('C:\\Users\\Joey\\PycharmProjects\\Automata-Testing'))
+# sys.path.insert(0, os.path.abspath('C:\\Users\\Joey\\PycharmProjects\\Automata-Testing'))
 import copy
 import optimization_functions
 import graph_manager
@@ -16,7 +16,7 @@ import graph_test_methods
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz 2.44.1/bin'
+# os.environ["PATH"] += os.pathsep + 'C:/Program Files/Graphviz 2.44.1/bin'
 
 
 # In[2]:
