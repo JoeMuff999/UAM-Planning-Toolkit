@@ -14,7 +14,6 @@ from tulip.spec.prioritized_safety import PrioritizedSpecification
 from tulip.transys.mathset import PowerSet
 from tulip.mvp import solve as solve_mvp
 import time
-# TODO (warning!) :: You may encounter an error when running this. I had to add some code to the TuLiP package to get it to work. PM ME WHEN YOU ENCOUNTER THIS ERROR!
 
 # TODO :: ALGORITHM IS NOT FULLY TESTED, MAY NOT BE WORKING COMPLETELY. WORKS FOR SIMPLE EXAMPLES AT THE VERY LEAST
 # TODO (just a note, but wanted to make it highlighted) :: you will encounter "same labeled transition warnings "from_state---[label]---> to_state"".
