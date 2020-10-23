@@ -12,12 +12,12 @@ In your terminal (on Windows this would be Git Bash, Powershell, CMD or some oth
 ```
 Which will clone the repository to your local machine. 
 ### Install dependencies with pip:
-In your terminal, run the following (**replace {OS} with linux or windows** and **you may need to replace "pip" with "pip3"**):
+In your terminal, run the following (**you may need to replace "pip" with "pip3"**):
 ```
    $ cd Automata-Testing
    $ pip install wheel
    $ pip install cvxopt
-   $ pip install -r requirements_{OS}.txt
+   $ pip install -r requirements.txt
 ```
 Which will install (almost) all of the dependencies.
 ### Install TuLiP:
@@ -39,6 +39,9 @@ Linux:
    $ sudo apt-get install python3-tk
    ```
    (Credits to : https://stackoverflow.com/questions/56656777/userwarning-matplotlib-is-currently-using-agg-which-is-a-non-gui-backend-so)
+
+Windows:
+- If you recieve the error "python not found" or "pip not found", ensure that your python.exe and your pip.exe are added to your PATH environment variable
 
 ## How to run:
 **main_experiment.py is a good starting point - it was the script we used to create the data for our IAAI-21 submission**
@@ -69,4 +72,4 @@ Tested using:
 - Ubuntu 20.04 & Python 3.8.6
 - Windows 10 v1903 & Python 3.7.1
 
-Full module dependency list can be found under debug/full_requirements_{OS}
+Full module dependency list can be found under debug/full_requirements
