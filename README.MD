@@ -17,7 +17,7 @@ In your terminal (on Windows this would be Git Bash, Powershell, CMD or some oth
 ```
 Which will clone the repository to your local machine. 
 ### Install dependencies with pip:
-In your terminal, run the following (not ready yet, still checking which packages are necessary):
+In your terminal, run the following (**if you use pip3, replace "pip" with "pip3"**)(not ready yet, still checking which packages are necessary):
 ```
    $ cd Automata-Testing
    $ pip install wheel
@@ -26,10 +26,23 @@ In your terminal, run the following (not ready yet, still checking which package
 ```
 Which will install (almost) all of the dependencies.
 ### Install TuLiP:
-You will need to install my forked implementation of tulip. To do so, run the following in your terminal:
+You will need to install my forked implementation of tulip. To do so, run the following in your terminal (**you may need to replace "python" with "python3" depending on how your symlinks are setup**) (**you may need to prepend the final command with "sudo", and your may need to run it twice**):
 ```
    $ git clone https://github.com/JoeMuff999/tulip-control
    $ cd tulip-control
    $ pip install -r requirements.txt
-   $ python setup.py install
+   $ python setup.py install 
 ```
+
+##Troubleshooting Installation:
+Linux:
+-Verify that your matplotlib installation is version 3.2.0 by running the command 
+   '''
+   $ pip list
+   '''
+-If you recieve the error "matplotlib-is-currently-using-agg-which-is-a-non-gui-backend", run the following:
+   '''
+   $ sudo apt-get install python3-tk
+   '''
+(Credits to : https://stackoverflow.com/questions/56656777/userwarning-matplotlib-is-currently-using-agg-which-is-a-non-gui-backend-so)
+
