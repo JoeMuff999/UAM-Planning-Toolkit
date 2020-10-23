@@ -17,12 +17,12 @@ In your terminal (on Windows this would be Git Bash, Powershell, CMD or some oth
 ```
 Which will clone the repository to your local machine. 
 ### Install dependencies with pip:
-In your terminal, run the following (**if you use pip3, replace "pip" with "pip3"**)(not ready yet, still checking which packages are necessary):
+In your terminal, run the following (**replace {OS} with linux or windows**)  (**if you use pip3, replace "pip" with "pip3"**):
 ```
    $ cd Automata-Testing
    $ pip install wheel
    $ pip install cvxopt
-   $ pip install -r requirements.txt
+   $ pip install -r requirements_{OS}.txt
 ```
 Which will install (almost) all of the dependencies.
 ### Install TuLiP:
@@ -30,7 +30,6 @@ You will need to install my forked implementation of tulip. To do so, run the fo
 ```
    $ git clone https://github.com/JoeMuff999/tulip-control
    $ cd tulip-control
-   $ pip install -r requirements.txt
    $ python setup.py install 
 ```
 
