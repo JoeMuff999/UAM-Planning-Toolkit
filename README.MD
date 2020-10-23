@@ -73,3 +73,5 @@ Tested using:
 - Windows 10 v1903 & Python 3.7.1
 
 Full module dependency list can be found under debug/full_requirements
+
+If any issue arises please let us know! My email is jrmuff@utexas.edu
