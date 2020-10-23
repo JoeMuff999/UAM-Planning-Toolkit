@@ -34,15 +34,15 @@ You will need to install my forked implementation of tulip. To do so, run the fo
    $ python setup.py install 
 ```
 
-##Troubleshooting Installation:
+## Troubleshooting Installation:
 Linux:
--Verify that your matplotlib installation is version 3.2.0 by running the command 
-   '''
+- Verify that your matplotlib installation is version 3.2.0 by running the command 
+   ```
    $ pip list
-   '''
--If you recieve the error "matplotlib-is-currently-using-agg-which-is-a-non-gui-backend", run the following:
-   '''
+   ```
+- If you recieve the error "matplotlib-is-currently-using-agg-which-is-a-non-gui-backend", run the following:
+   ```
    $ sudo apt-get install python3-tk
-   '''
-(Credits to : https://stackoverflow.com/questions/56656777/userwarning-matplotlib-is-currently-using-agg-which-is-a-non-gui-backend-so)
+   ```
+   (Credits to : https://stackoverflow.com/questions/56656777/userwarning-matplotlib-is-currently-using-agg-which-is-a-non-gui-backend-so)
 
