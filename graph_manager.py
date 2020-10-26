@@ -196,7 +196,7 @@ def run_minimizing_mvp(system, rollout_index=1):
         print("tower " + str(tower_index) + " expensive request cumulative : " + str(cumulative_ERFind_time[tower_index]) + " ,published request synthesis cumulative : " + str(cumulative_PRTest_time[tower_index]))
 
 
-    return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round
+    return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round, system
 
 #returns the new system based on the round algorithm. Also, if violation is minimized (ie: system not altered), return True. else, return False
 def do_round(system, round_index, rollout_index):

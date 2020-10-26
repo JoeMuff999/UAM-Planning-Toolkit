@@ -1,0 +1,18 @@
+
+INITIALIZATION STUFF
+begin with a sample system.
+Get their optimal traces -> our system should now just be a list of traces, which are lists of states
+run rollout with the initial rollout index
+now we should have the most optimal list of traces. -> may need to rework run_minimizing_mvp because they take in systems
+
+Gameloop:
+
+now, we may begin our game loop
+
+run_minimizing_mvp takes in a system and then spits out the final cost vector and a bunch of debug information. 
+do_round takes in a system and spits out an updated system based on the most violating request being shifted around
+
+what I need is to give something a system and then spit out the optimal trace for each
+then I also need something that takes in a trace and a new request and then gives me an optimal set of tracess
+
+I need a method that takes each system and then culls old states
