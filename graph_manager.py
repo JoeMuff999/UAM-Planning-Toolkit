@@ -15,7 +15,6 @@ from tulip.transys.mathset import PowerSet
 from tulip.mvp import solve as solve_mvp
 import time
 
-# TODO :: ALGORITHM IS NOT FULLY TESTED, MAY NOT BE WORKING COMPLETELY. WORKS FOR SIMPLE EXAMPLES AT THE VERY LEAST
 # TODO (just a note, but wanted to make it highlighted) :: you will encounter "same labeled transition warnings "from_state---[label]---> to_state"".
 # TODO (note continued) :: This has to do with TuLiP encountering repeat transitions. It hasn't had an effect on logic thus far, so I wouldn't worry too much about it.
 # TODO (note continued) :: If these prints are too annoying, you can comment out this line in "labeled_graphs.py" (line 1007) in the TuLiP package.
@@ -156,11 +155,12 @@ def rollout_monte_carlo(trace, index, req_to_add):
     return resultant_graph
 
 
-def run_minimizing_mvp(system, rollout_index=1):
+def run_minimizing_mvp(system, rollout_index=1, return_traces=False):
     num_rounds = 0
     violation_minimized = False
     total_time = 0
     cost_vec_per_round = list()
+    trace_per_tower = None
     while not violation_minimized:
         for tower in system:  #debugging
             print(str(tower))
@@ -168,7 +168,7 @@ def run_minimizing_mvp(system, rollout_index=1):
         system_timings.append([])
         for tower in system:
             system_timings[num_rounds].append([])
-        system, violation_minimized, minimized_cost_vec = do_round(system, num_rounds, rollout_index)
+        system, violation_minimized, minimized_cost_vec, trace_per_tower = do_round(system, num_rounds, rollout_index)
         cost_vec_per_round.append(minimized_cost_vec)
         time_end = time.perf_counter()
         total_time += time_end - time_start
@@ -181,6 +181,7 @@ def run_minimizing_mvp(system, rollout_index=1):
                 print("\t tower " + str(tower_index) + " took " + str(system_timings[num_rounds][tower_index][0]) + " to find most expensive request and took " + str(system_timings[num_rounds][tower_index][1]) + " to synthesize with published request")
         print("")
         num_rounds += 1
+
 
     assert(minimized_cost_vec is not None)
 
@@ -195,8 +196,10 @@ def run_minimizing_mvp(system, rollout_index=1):
     for tower_index in range(len(system_timings[0])):
         print("tower " + str(tower_index) + " expensive request cumulative : " + str(cumulative_ERFind_time[tower_index]) + " ,published request synthesis cumulative : " + str(cumulative_PRTest_time[tower_index]))
 
-
-    return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round, system
+    if return_traces:
+        return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round, trace_per_tower
+    else:
+        return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round#, system
 
 #returns the new system based on the round algorithm. Also, if violation is minimized (ie: system not altered), return True. else, return False
 def do_round(system, round_index, rollout_index):
@@ -206,7 +209,7 @@ def do_round(system, round_index, rollout_index):
     accompanying_step_list = []
     worst_cost_list = []
     publishing_tower_index_list = []
-
+    trace_per_tower = []
     for index, tower in enumerate(system):
         # does worst_request_dictionary already contain the most expensive/worst request for this tower
         time_start = time.perf_counter()
@@ -218,7 +221,8 @@ def do_round(system, round_index, rollout_index):
             # time_end = time.perf_counter()
             # print("saved this many seconds " + str(time_end - time_start))
         else:
-            curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
+            curr_request_index, curr_time, curr_cost, og_trace = get_worst_request_index(tower)
+            trace_per_tower.append(og_trace) # dirty. because we won't use this trace_per_tower unless the system doesn't change, we can assume the og_trace will be safe to use for all towers
             worst_request_dictionary[tower.base_state] = (curr_request_index, curr_time, curr_cost)
         time_end = time.perf_counter()
         system_timings[round_index][index].append(time_end-time_start)
@@ -259,8 +263,8 @@ def do_round(system, round_index, rollout_index):
         del worst_cost_list[list_index]
         del publishing_tower_index_list[list_index]
 
-
-
+        accepting_system = None # this is the system which will accept the new request
+        
         # find which tower will accept
         cost_of_accepting_request_list = []
         accepting_tower_index = -1
@@ -269,10 +273,15 @@ def do_round(system, round_index, rollout_index):
             if index != publishing_tower_index:
                 time_start = time.perf_counter()
                 cost_of_tower_without_published_request, trace, empty, empty1 = generate_trace(tower)
+                save_system = None # used to save the system, fixes the issue with building the tower from scratch ISSUE_ID=0
+                final_trace = None # used to save the trace, fixes the issue with not having the correct trace for each tower be returned
                 if rollout_index >= len(trace):
-                    cost_of_accepting_request = vector_difference(cost_with_new_vec(tower, published_request_time), cost_of_tower_without_published_request) #param_1 - param_2
+                    save_system = add_req_to_tower(tower, published_request_time)
+                    cost_with_published_request = generate_trace(save_system)[0]
+                    cost_of_accepting_request = vector_difference(cost_with_published_request, cost_of_tower_without_published_request) #param_1 - param_2
                 else:
-                    cost_of_accepting_request = vector_difference(generate_trace(rollout_monte_carlo(trace, rollout_index, ('no_pref', published_request_time)), True)[0], cost_of_tower_without_published_request) #param_1 - param_2
+                    save_system = rollout_monte_carlo(trace, rollout_index, ('no_pref', published_request_time))
+                    cost_of_accepting_request = vector_difference(generate_trace(save_system, True)[0], cost_of_tower_without_published_request) #param_1 - param_2
                 #prevent infinite runs. cost_of_accepting_request won't have transition cost so we need to add a penalty so it won't swap if equal
                 cost_of_accepting_request[len(cost_of_accepting_request)-1]+=1
                 time_end = time.perf_counter()
@@ -281,16 +290,21 @@ def do_round(system, round_index, rollout_index):
                 if compare_levels(cost_of_accepting_request, min_new_cost):
                     min_new_cost = cost_of_accepting_request
                     accepting_tower_index = index
+                    accepting_system = save_system
+                # else: # only need trace if the system is minimized, therefore we can safely save "trace" because it is the trace without the published request (and thus is the original state)
+                #     trace_per_tower[index] = trace
         print("accepting tower index " + str(accepting_tower_index))
         print("lowest_new_cost " + str(min_new_cost))
         print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
         if accepting_tower_index != -1: #found a tower that will accept the request
-            system[accepting_tower_index] = add_req_to_tower(system[accepting_tower_index], published_request_time)
+            assert accepting_tower_index != publishing_tower_index # sanity check
+            assert accepting_system is not None # sanity check2
+            system[accepting_tower_index] = accepting_system
             system[publishing_tower_index] = del_req_from_tower(system[publishing_tower_index], published_request_index)
-            return system, False, cost_vec
+            return system, False, cost_vec, None
 
-    return system, True, cost_vec
-
+    return system, True, cost_vec, trace_per_tower
+#TODO make each helper method take in a list of traces
 def add_req_to_tower(old_tower, new_request_time):
     #copy over old tower parameters then add the new request
     req_copy = copy.deepcopy(old_tower.request_vector)
@@ -349,7 +363,7 @@ def get_worst_request_index(input_graph):
     og = generate_trace(input_graph)
     original_cost = og[0]
 
-    request_list = [input_graph]
+    # request_list = [input_graph]
 
     highest_cost_vec = [-1, -1, -1]
     worst_request_time = -1
@@ -360,7 +374,7 @@ def get_worst_request_index(input_graph):
         curr_req = input_graph.request_vector[i]
         curr_time = input_graph.max_time_per_req_vector[i]
 
-        request_list.append(curr_req)
+        # request_list.append(curr_req)
         new_cost = cost_with_removed_vec(input_graph, i)
 
         diff = vector_difference(original_cost, new_cost)
@@ -373,7 +387,7 @@ def get_worst_request_index(input_graph):
         end_time = time.time()
         #print("finished req :: " + str(i) + " in time " + str(end_time - start_time))
 
-    return worst_request_index, worst_request_time, highest_cost_vec  # request_list, trace_list,
+    return worst_request_index, worst_request_time, highest_cost_vec, og[1]  # request_list, trace_list,
 
 
 def compare_levels(orig_vec, new_vec): # if new - orig > 0 (priority based on index)
@@ -500,4 +514,5 @@ def generate_trace(graph, override=False):
     # print("Optimal cost: {}".format(cost))
     # print("State path: {}".format(state_path))
     # print("Product path: {}".format(product_path))
+    
     return (cost, state_path, product_path, wpa)
