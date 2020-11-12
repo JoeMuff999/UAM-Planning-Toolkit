@@ -29,4 +29,5 @@ KNOWN ISSUES:
  - BUILDING GRAPHS EXCESSIVELY. Would be much easier to save graphs, especially in your main round algorithm
 
  record as much as you can but suda says record the request acepted at the step.
- make rollout state where you look for the worst request 
+ make rollout state where you look for the worst request
+generalize the rollout stuff

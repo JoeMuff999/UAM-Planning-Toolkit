@@ -112,10 +112,17 @@ def get_optimal_trace_with_new_request(orig_trace, new_req):
 #                 return True
 
 
-def rollout_monte_carlo(trace, index, req_to_add):
+def rollout_monte_carlo(trace, index, req_to_add=None, return_subtrace=False):
     # add the new request to the state from which we will build the new graph
     # print(len(trace))
     # print(index)
+    if(index >= len(trace)):
+        return  reworked_graph.ReworkedGraph(
+        trace[0]._port_dict,
+        1,
+        list(trace[0].request_vector),
+        list(trace[0].time_vector)
+    ), []
     state_at_index = copy.deepcopy(trace[index])
 
     assert isinstance(state_at_index, reworked_graph.State)
@@ -123,8 +130,9 @@ def rollout_monte_carlo(trace, index, req_to_add):
     updated_request_vector = list(copy.copy(state_at_index.request_vector))
     updated_time_vector = list(copy.copy(state_at_index.time_vector))
 
-    updated_request_vector.append(req_to_add[0])
-    updated_time_vector.append(req_to_add[1]-index)
+    if req_to_add is not None:
+        updated_request_vector.append(req_to_add[0])
+        updated_time_vector.append(req_to_add[1]-index)
 
     state_at_index = reworked_graph.State(
         tuple(updated_request_vector),
@@ -146,16 +154,19 @@ def rollout_monte_carlo(trace, index, req_to_add):
     for index, state in enumerate(subtrace_before_index):
         if index+1 < len(subtrace_before_index):
             resultant_graph.transitions.add((state, "SEE_GRAPH_MANAGER", subtrace_before_index[index+1]))
-        else:
+        else: #last request in subtrace, hook it up with the base_state of the second part
             resultant_graph.transitions.add((state, "SEE_GRAPH_MANAGER", resultant_graph.base_state))
         resultant_graph.states.add(state)
     if index > 0:
         resultant_graph.base_state = copy.deepcopy(subtrace_before_index[0])
+    resultant_graph.states.add(copy.deepcopy(subtrace_before_index[0]))
+    if return_subtrace:
+        return resultant_graph, subtrace_before_index
+    else:
+        return resultant_graph
 
-    return resultant_graph
-
-
-def run_minimizing_mvp(system, rollout_index=1, return_traces=False):
+#TODO we want to take worst requests from rollout index onward
+def run_minimizing_mvp(system, rollout_index=0, return_traces=False):
     num_rounds = 0
     violation_minimized = False
     total_time = 0
@@ -199,7 +210,7 @@ def run_minimizing_mvp(system, rollout_index=1, return_traces=False):
     if return_traces:
         return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round, trace_per_tower
     else:
-        return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round#, system
+        return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round#trace_per_tower#, system
 
 #returns the new system based on the round algorithm. Also, if violation is minimized (ie: system not altered), return True. else, return False
 def do_round(system, round_index, rollout_index):
@@ -214,7 +225,8 @@ def do_round(system, round_index, rollout_index):
         # does worst_request_dictionary already contain the most expensive/worst request for this tower
         time_start = time.perf_counter()
         if tower.base_state in worst_request_dictionary.keys():
-            curr_request_index, curr_time, curr_cost = worst_request_dictionary[tower.base_state]
+            curr_request_index, curr_time, curr_cost, og_trace = worst_request_dictionary[tower.base_state]
+            trace_per_tower.append(og_trace)
             # print("used old values")
             # time_start = time.perf_counter()
             # curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
@@ -223,7 +235,7 @@ def do_round(system, round_index, rollout_index):
         else:
             curr_request_index, curr_time, curr_cost, og_trace = get_worst_request_index(tower)
             trace_per_tower.append(og_trace) # dirty. because we won't use this trace_per_tower unless the system doesn't change, we can assume the og_trace will be safe to use for all towers
-            worst_request_dictionary[tower.base_state] = (curr_request_index, curr_time, curr_cost)
+            worst_request_dictionary[tower.base_state] = (curr_request_index, curr_time, curr_cost, og_trace) # so lame, but have to save og_trace so that we make sure every trace gets saved
         time_end = time.perf_counter()
         system_timings[round_index][index].append(time_end-time_start)
 
