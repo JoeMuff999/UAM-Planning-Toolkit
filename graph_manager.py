@@ -156,7 +156,7 @@ def rollout_monte_carlo(trace, index, req_to_add):
     return resultant_graph
 
 
-def run_minimizing_mvp(system, rollout_index=1):
+def run_minimizing_mvp(system, rollout_index=0):
     num_rounds = 0
     violation_minimized = False
     total_time = 0
@@ -194,6 +194,8 @@ def run_minimizing_mvp(system, rollout_index=1):
             cumulative_PRTest_time[tower_index] += system_timings[round_index][tower_index][1]
     for tower_index in range(len(system_timings[0])):
         print("tower " + str(tower_index) + " expensive request cumulative : " + str(cumulative_ERFind_time[tower_index]) + " ,published request synthesis cumulative : " + str(cumulative_PRTest_time[tower_index]))
+
+    print("end of system\n---")
 
 
     return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round
