@@ -209,28 +209,32 @@ def do_round(system, round_index, rollout_index):
     worst_cost_list = []
     publishing_tower_index_list = []
 
+    tower_cost_list = [] #keep track of the tower, without removed request, cost
+
     for index, tower in enumerate(system):
         # does worst_request_dictionary already contain the most expensive/worst request for this tower
         time_start = time.perf_counter()
         if tower.base_state in worst_request_dictionary.keys():
-            curr_request_index, curr_time, curr_cost = worst_request_dictionary[tower.base_state]
+            curr_request_index, curr_time, curr_cost, full_tower_cost = worst_request_dictionary[tower.base_state]
             # print("used old values")
             # time_start = time.perf_counter()
             # curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
             # time_end = time.perf_counter()
             # print("saved this many seconds " + str(time_end - time_start))
         else:
-            curr_request_index, curr_time, curr_cost = get_worst_request_index(tower)
-            worst_request_dictionary[tower.base_state] = (curr_request_index, curr_time, curr_cost)
+            curr_request_index, curr_time, curr_cost, full_tower_cost = get_worst_request_index(tower)
+            worst_request_dictionary[tower.base_state] = (curr_request_index, curr_time, curr_cost, full_tower_cost)
         time_end = time.perf_counter()
         system_timings[round_index][index].append(time_end-time_start)
-
+        tower_cost_list.append(full_tower_cost)
         worst_request_indices_list.append(curr_request_index)
         accompanying_step_list.append(curr_time)
+
         worst_cost_list.append(curr_cost)
+
         publishing_tower_index_list.append(index) #used to keep track of what tower each index is aligned to
 
-    cost_vec = copy.copy(worst_cost_list) #copy to return so that we can have the data on the final costs
+    cost_vec = copy.copy(tower_cost_list) #copy to return so that we can have the data on the final costs
     for i in worst_cost_list: #debugging
         print_formatted_cost(i)
     for index in range(len(system)): #prep system timing list
@@ -245,7 +249,7 @@ def do_round(system, round_index, rollout_index):
         published_request_time = 0
         for index, cost in enumerate(worst_cost_list):
             if compare_levels(cost_of_published_request, cost):
-                cost_of_published_request = cost
+                cost_of_published_request = copy.copy(cost)
                 publishing_tower_index = publishing_tower_index_list[index]
                 published_request_index = worst_request_indices_list[index]
                 published_request_time = accompanying_step_list[index]
@@ -375,7 +379,7 @@ def get_worst_request_index(input_graph):
         end_time = time.time()
         #print("finished req :: " + str(i) + " in time " + str(end_time - start_time))
 
-    return worst_request_index, worst_request_time, highest_cost_vec  # request_list, trace_list,
+    return worst_request_index, worst_request_time, highest_cost_vec, original_cost  # request_list, trace_list,
 
 
 def compare_levels(orig_vec, new_vec): # if new - orig > 0 (priority based on index)
@@ -406,7 +410,7 @@ def vector_difference(l1, l2):
     return diff
 
 def print_formatted_cost(cost_to_print):
-    print("Optimal cost: {}".format(cost_to_print))
+    print("Most expensive request cost: {}".format(cost_to_print))
 
 def print_formatted_trace_path(trace_to_print):
     print("State path: {}".format(trace_to_print))
