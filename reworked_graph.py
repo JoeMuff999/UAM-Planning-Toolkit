@@ -15,6 +15,7 @@ REQUESTS = 0
 TIMES = 1
 
 NO_PREF = "no_pref"
+WRONG_TOWER = "wrong_tower"
 #TODO :: fix bug that overflowed gets counted more than once -> believe this is already done, just be aware of this possible source of error.
 
 class ReworkedGraph(object):
@@ -28,6 +29,8 @@ class ReworkedGraph(object):
         assert len(max_time_per_req_vector) == len(request_vector)
 
         self.base_state = State(tuple(request_vector), tuple(max_time_per_req_vector), port_dict=requests_per_port_per_step)
+
+
 
         self.states = set()
         self.transitions = set()
@@ -106,7 +109,7 @@ class ReworkedGraph(object):
     def generate_choices(self, num_requests):
         base_list = [i for i in range(num_requests)]
         list_to_return = []
-        for i in range(
+        for i in range(1,
             self.max_accepted_requests + 1):  # range(1, self.max_accepted_requests+1) -> don't include empty case
             tmp = combinations(base_list, i)
             list_to_return.extend(tmp)
@@ -129,7 +132,7 @@ class ReworkedGraph(object):
             if request_tuple is not None:
                 if request_tuple[0] in port_choice_list:
                     port_choice_list.remove(request_tuple[0])
-                elif request_tuple[0] != NO_PREF:
+                elif request_tuple[0] != NO_PREF and request_tuple[0] != WRONG_TOWER:
                     return True
         return False
 
@@ -137,7 +140,7 @@ class ReworkedGraph(object):
         port_choice_list = list(port_choice)
         for port in port_choice_list:
             key = str(port)
-            if port == NO_PREF:
+            if port == NO_PREF or port == WRONG_TOWER:
                 continue
             elif port_dict[key] <= -1 and previous_port_dict[key] > port_dict[key]: #logic : if landed another at this port, and the previous state did not have this many, must be overflow
                 return True
@@ -171,7 +174,6 @@ class State(object):
         assert type(request_vector) is tuple
         assert type(time_vector) is tuple
         assert len(request_vector) == len(time_vector)
-
 
         self.violated_port = violated_port
         self.overflowed_port = overflowed_port

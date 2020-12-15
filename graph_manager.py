@@ -24,6 +24,7 @@ import time
 synthesis_dictionary = dict()
 worst_request_dictionary = dict()
 system_timings = []
+system_req_vector_size_per_tower = []
 
 def get_optimal_trace_with_new_request(orig_trace, new_req):
 
@@ -164,6 +165,7 @@ def run_minimizing_mvp(system, rollout_index=0):
     while not violation_minimized:
         for tower in system:  #debugging
             print(str(tower))
+            system_req_vector_size_per_tower.append(len(tower.request_vector))
         time_start = time.perf_counter()
         system_timings.append([])
         for tower in system:
@@ -227,6 +229,7 @@ def do_round(system, round_index, rollout_index):
         time_end = time.perf_counter()
         system_timings[round_index][index].append(time_end-time_start)
         tower_cost_list.append(full_tower_cost)
+        print("Tower's current cost = " + str(full_tower_cost))
         worst_request_indices_list.append(curr_request_index)
         accompanying_step_list.append(curr_time)
 
@@ -234,7 +237,7 @@ def do_round(system, round_index, rollout_index):
 
         publishing_tower_index_list.append(index) #used to keep track of what tower each index is aligned to
 
-    cost_vec = copy.copy(tower_cost_list) #copy to return so that we can have the data on the final costs
+    cost_vec = copy.deepcopy(tower_cost_list) #copy to return so that we can have the data on the final costs
     for i in worst_cost_list: #debugging
         print_formatted_cost(i)
     for index in range(len(system)): #prep system timing list
@@ -278,9 +281,10 @@ def do_round(system, round_index, rollout_index):
                 if rollout_index >= len(trace):
                     cost_of_accepting_request = vector_difference(cost_with_new_vec(tower, published_request_time), cost_of_tower_without_published_request) #param_1 - param_2
                 else:
-                    cost_of_accepting_request = vector_difference(generate_trace(rollout_monte_carlo(trace, rollout_index, ('no_pref', published_request_time)), True)[0], cost_of_tower_without_published_request) #param_1 - param_2
+                    cost_of_accepting_request = vector_difference(generate_trace(rollout_monte_carlo(trace, rollout_index, ('wrong_tower', published_request_time)), True)[0], cost_of_tower_without_published_request) #param_1 - param_2
                 #prevent infinite runs. cost_of_accepting_request won't have transition cost so we need to add a penalty so it won't swap if equal
-                cost_of_accepting_request[len(cost_of_accepting_request)-1]+=1
+                cost_of_accepting_request[len(cost_of_accepting_request)-1] += 1
+                # cost_of_accepting_request[1] += 1 # level 1 cost of request landing at not preferred port (different tower than original)
                 time_end = time.perf_counter()
                 system_timings[round_index][index][1] += (time_end - time_start)
                 cost_of_accepting_request_list.append(cost_of_accepting_request)
@@ -292,7 +296,9 @@ def do_round(system, round_index, rollout_index):
         print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
         if accepting_tower_index != -1: #found a tower that will accept the request
             system[accepting_tower_index] = add_req_to_tower(system[accepting_tower_index], published_request_time)
+            assert(published_request_index <= system_req_vector_size_per_tower[publishing_tower_index]-1) # ensure that the removed request was originally a part of this tower
             system[publishing_tower_index] = del_req_from_tower(system[publishing_tower_index], published_request_index)
+            system_req_vector_size_per_tower[publishing_tower_index]-=1
             return system, False, cost_vec
 
     return system, True, cost_vec
@@ -303,7 +309,7 @@ def add_req_to_tower(old_tower, new_request_time):
     time_copy = copy.deepcopy(old_tower.max_time_per_req_vector)
     port_dict = copy.deepcopy(old_tower.port_limits)
     req_per_step = old_tower.max_accepted_requests
-    req_copy.append('no_pref')
+    req_copy.append('wrong_tower')
     time_copy.append(new_request_time)
 
     # generate new tower
@@ -328,7 +334,7 @@ def cost_with_new_vec(input_graph, new_request_time):
     time_copy = copy.deepcopy(input_graph.max_time_per_req_vector)
     port_dict = copy.deepcopy(input_graph.port_limits)
     req_per_step = input_graph.max_accepted_requests
-    req_copy.append('no_pref')
+    req_copy.append('wrong_tower')
     time_copy.append(new_request_time)
 
     # generate new tower
@@ -402,6 +408,7 @@ def reset_globals():
     synthesis_dictionary.clear()
     worst_request_dictionary.clear()
     system_timings.clear()
+    system_req_vector_size_per_tower.clear()
 
 def vector_difference(l1, l2):
     diff = []
@@ -502,6 +509,9 @@ def generate_trace(graph, override=False):
     spec.add_rule(fa2, priority=2, level=1)
 
     (cost, state_path, product_path, wpa) = solve_mvp(ts, "FINISH", spec)
+    for req in graph.request_vector:
+        if req == "wrong_tower":
+            cost._value[1] += 1
     synthesis_dictionary[graph.base_state] = (cost, state_path, product_path, wpa)
     # print("Optimal cost: {}".format(cost))
     # print("State path: {}".format(state_path))
