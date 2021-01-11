@@ -1,0 +1,33 @@
+
+INITIALIZATION STUFF
+begin with a sample system.
+Get their optimal traces -> our system should now just be a list of traces, which are lists of states
+run rollout with the initial rollout index
+now we should have the most optimal list of traces. -> may need to rework run_minimizing_mvp because they take in systems
+
+Gameloop:
+
+now, we may begin our game loop
+
+run_minimizing_mvp takes in a system and then spits out the final cost vector and a bunch of debug information. 
+do_round takes in a system and spits out an updated system based on the most violating request being shifted around
+
+what I need is to give something a system and then spit out the optimal trace for each
+then I also need something that takes in a trace and a new request and then gives me an optimal set of tracess
+
+I need a method that takes each system and then culls old staes
+
+get rid of cost with new vec and these helper methods (replace them)
+rollout won't work because when you rebuild the graph at the bottom of do_round there is no guarantee that the next set of rounds will
+get them off of the dependency of needing the helper methods. why? because the helper methods require that the input be a reworked_graph object
+
+ISSUE_ID:
+0 -> when using rollout, we build the graph from potentially not the base state. The issue with the current code is that we do not take into account this new index when rebuilding the tower that will be returned from the round. we simply call add_req_to_tower, which builds the graph from the base state. Instead, we need to save the system when we add a request to it and test it (also saves time!), and then return that. RESOLVED
+1 -> if we have finished the round, and no change has been made, we want to return each towers trace. this is the FINAL trace for each tower, as we know that since there will be no more rounds, the system is as minimized as possible. We only want to record these traces (if possible) when we know that the system is minimized - and thus, the traces will not change anymore.
+
+KNOWN ISSUES:
+ - BUILDING GRAPHS EXCESSIVELY. Would be much easier to save graphs, especially in your main round algorithm
+
+ record as much as you can but suda says record the request acepted at the step.
+ make rollout state where you look for the worst request
+generalize the rollout stuff

@@ -54,3 +54,5 @@ coverage.xml
 docs/_build/
 
 docker
+*.code-workspace
+.vscode
