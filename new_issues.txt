@@ -1,0 +1,13 @@
+goal state ("finish" label) applied to empty states. solution: make it so that finish is not goal, but that another label is the real goal. manually apply thatto the end state.
+
+For NFM, you implemented tower costs using a label that you then just hacky tacked onto in graph_manager.generate_trace.
+
+
+requests should prefer towers
+
+for now, we 
+
+Outstanding issues:
+changing TAU : for example, if the planning includes empty states, it should not
+Testing: should test more
+Scoring/Evaluation: Probably manually tabulate cost based on labels (traces will be pretty short)

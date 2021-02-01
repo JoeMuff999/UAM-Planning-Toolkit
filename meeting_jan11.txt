@@ -1,0 +1,24 @@
+Meeting notes:
+
+Recap:
+    -said we (nok and suda) we're going to write down the algorithm for realtime requests
+
+Things we need to consider:
+    -emergency requests -> therefore, we may need a new cost (define cost for changing out a request) 
+
+
+How to handle emergency requests:
+    - dont let it override planned requests OR 
+    - make a very high cost for overriding planned requests.
+
+Planning horizon:
+    - t tau thingy where there is this like sliding window. off of each of these in the path you need to make a case where you do accept that incoming request
+    - this case will probably be like hey you only want to accept one per turn but now you will accept two with this huge violation. 
+
+Todo:
+    -new violation type
+    -sliding window thingy
+
+cannot override planned requests
+
+with each new request, attempt a branch (?)  off of the predetermined path

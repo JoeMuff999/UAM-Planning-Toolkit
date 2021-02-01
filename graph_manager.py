@@ -115,15 +115,13 @@ def get_optimal_trace_with_new_request(orig_trace, new_req):
 
 def rollout_monte_carlo(trace, index, req_to_add=None, return_subtrace=False):
     # add the new request to the state from which we will build the new graph
-    # print(len(trace))
-    # print(index)
     if(index >= len(trace)):
         return  reworked_graph.ReworkedGraph(
-        trace[0]._port_dict,
-        1,
-        list(trace[0].request_vector),
-        list(trace[0].time_vector)
-    ), []
+            trace[0]._port_dict,
+            1,
+            list(trace[0].request_vector),
+            list(trace[0].time_vector)
+        ), []
     state_at_index = copy.deepcopy(trace[index])
 
     assert isinstance(state_at_index, reworked_graph.State)
@@ -178,7 +176,7 @@ def run_minimizing_mvp(system, rollout_index=0):
         system_timings.append([])
         for tower in system:
             system_timings[num_rounds].append([])
-        system, violation_minimized, minimized_cost_vec, trace_per_tower = do_round(system, num_rounds, rollout_index)
+        system, violation_minimized, minimized_cost_vec = do_round(system, num_rounds, rollout_index)
         cost_vec_per_round.append(minimized_cost_vec)
         time_end = time.perf_counter()
         total_time += time_end - time_start
@@ -319,8 +317,7 @@ def do_round(system, round_index, rollout_index):
 
     return system, True, cost_vec
 
-    return system, True, cost_vec, trace_per_tower
-#TODO make each helper method take in a list of traces
+#TODO: make each helper method take in a list of traces
 def add_req_to_tower(old_tower, new_request_time):
     #copy over old tower parameters then add the new request
     req_copy = copy.deepcopy(old_tower.request_vector)
