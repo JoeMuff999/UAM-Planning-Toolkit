@@ -11,3 +11,10 @@ Outstanding issues:
 changing TAU : for example, if the planning includes empty states, it should not
 Testing: should test more
 Scoring/Evaluation: Probably manually tabulate cost based on labels (traces will be pretty short)
+
+new meeting
+make interesting data, so sort of track how much traffic there was, then see how well it performs against traffic increases
+
+make exception for empty states
+
+also, how do we handle ports. 

@@ -31,7 +31,7 @@ def main_loop(initial_system, additional_requests):
     # minimizing the initial system using the request swapping algorithm
     minimized_system = copy.deepcopy(initial_system)
     gm.run_minimizing_mvp(minimized_system)
-
+    # add it to the first state that is empty
     #obtain minimized traces
     minimized_traces = get_minimized_traces(minimized_system) # the initial plan for our agents. 
     print("minimized_traces" + str(minimized_traces))
@@ -44,19 +44,45 @@ def main_loop(initial_system, additional_requests):
                 for requested_tower_index in request_dict:
                     requested_tower = minimized_traces[requested_tower_index]
                     # check if requested tower has an existing TAU state, else its an empty state
+                    was_big_enough = False
                     if len(requested_tower) > TAU:
                         TAU_state = copy.deepcopy(requested_tower[TAU]) 
+                        was_big_enough = True
                     else:
-                        fill_with_empty_states(requested_tower) 
+                        # fill_with_empty_states(requested_tower) 
                         TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
                     print("additional requests for this tower = " + str(request_dict[requested_tower_index]))
-                    for request in request_dict[requested_tower_index]:
-                        requested_port = request[0]
-                        adjusted_expiration_time = request[1] - TAU 
-                        TAU_state.request_vector = list(TAU_state.request_vector)
-                        TAU_state.time_vector = list(TAU_state.time_vector)
-                        TAU_state.request_vector.append(requested_port)
-                        TAU_state.time_vector.append(adjusted_expiration_time) 
+                    # make a separate method for this code
+                    if was_big_enough:
+                        for index, request in enumerate(request_dict[requested_tower_index]):
+                            requested_port = request[0]
+                            adjusted_expiration_time = request[1] - TAU 
+                            TAU_state.request_vector = list(TAU_state.request_vector)
+                            TAU_state.time_vector = list(TAU_state.time_vector)
+                            TAU_state.request_vector.append(requested_port)
+                            TAU_state.time_vector.append(adjusted_expiration_time) 
+                    else:
+                        request_dict[requested_tower_index]
+                        for index, request in enumerate(request_dict[requested_tower_index]):
+                            requested_port = request[0]
+                            # add the requests to the first empty state 
+                            # for this case, lets say there is a tower that has an empty last state in the sense that it its last state
+                            # is a "finish" state. this check here will build off of that state. the other case if its an empty tower, which
+                            # the of course we just use the empty state.
+                            adjusted_expiration_time = request[1] - len(requested_tower) + 1 
+                            print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
+
+                            if len(requested_tower[len(requested_tower)-1].request_vector) == 0:
+                                TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
+                                adjusted_expiration_time = request[1] - len(requested_tower) + 2 
+
+                            TAU_state.request_vector = list(TAU_state.request_vector)
+                            TAU_state.time_vector = list(TAU_state.time_vector)
+                            TAU_state.request_vector.append(requested_port)
+                            TAU_state.time_vector.append(adjusted_expiration_time) 
+                    
+                    # so if we add to the first empty state, then we need to pad it with empty states.
+                    # yes, for record keeping. if there isn't and additional request, our tower will have no states!
 
                     TAU_graph = rg.ReworkedGraph(
                         TAU_state._port_dict, 
@@ -67,9 +93,14 @@ def main_loop(initial_system, additional_requests):
 
                     TAU_trace = gm.generate_trace(TAU_graph)[1]
                     print("Tau trace = " + str(TAU_trace))
-                    minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
+                    if was_big_enough:
+                        minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
+                    else:
+                        minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
                     print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
-
+        # what about the case when there are no more incoming requests for a while. then, we clearly won't have enough empty states
+        # in fact, when will this even be called again? this is fine actually
+        # what about the case of padding after the tau state? do we need padding if it adds the empty state anyways.
         record_completed_state(minimized_traces, completed_traces)
 
         TIME_STEP += 1
@@ -81,7 +112,8 @@ def main_loop(initial_system, additional_requests):
     #     for state_index, state in enumerate(minimized_traces[index]):
     #         assert(completed_traces[index][state_index] == state)
 
-# for any trace that does not have a valid state at index trace, fill up with empty states
+
+# for any trace that does not have a valid state at index TAU, fill up with empty states
 def fill_with_empty_states(trace_to_fill):
     global TAU
     for i in range(TAU + 1 - len(trace_to_fill)): 
