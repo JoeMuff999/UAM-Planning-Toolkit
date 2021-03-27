@@ -18,3 +18,21 @@ make interesting data, so sort of track how much traffic there was, then see how
 make exception for empty states
 
 also, how do we handle ports. 
+
+what do i need for realtime information:
+
+score: traffic flow:
+    - # of requests per round
+    - cost of processing the requests (time per round / # of requests that round?)
+    - periods of high traffic vs. low traffic : 10 requests in a round vs 1 request in a round
+
+measurements I need:
+    - cost of synthesis - we resynthesize all of the states after TAU. extract this from the return of the 
+        - cost of building the graph (ie: reworked graph call, and the cost of synthesis (gm.generate_trace))
+so basically, you'd want # of requests vs. synthesis time, you'd also need to standardize the TAU value. maybe make it avg # of requests per tower incoming (because if all of the requests are going to one tower, vs being evenly spread, then its far more expensive)
+
+the first minimization : maybe take this out? and just assign them to the towers that they are requested for (ie: don't do balancing?) this might not matter if the towers start empty (which they should actually)
+
+this actually doesn't seem that bad
+
+maybe make a comparison of TAU and non-TAU (ie: how much cheaper it is if don't replan the whole thing)
