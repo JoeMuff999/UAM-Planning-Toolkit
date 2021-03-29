@@ -474,8 +474,26 @@ def generate_trace(graph, override=False, finish_label="FINISH"):
     ts.states.add_from(graph.states)
     ts.states.initial.add(graph.base_state)
 
+    #NOTE: enforcing determinism : instead of tiebreaking randomly (ie: based on object id), we tiebreak by preferring states with a higher minimum TTL. 
+    #important for a realtime system, because what may be equally now may not be equally good later.
     for transition in graph.transitions:
-        ts.transitions.add(transition[0], transition[2], {"cost": 1})
+        smallest = 99999
+        for time in transition[2].time_vector:
+            if time < smallest:
+                smallest = time
+        cost = 0
+        if smallest == 0:
+            cost = 1
+        elif smallest == 1:
+            cost = .9
+        elif smallest == -1:
+            cost = 1.1
+        elif smallest < 0:
+            cost = smallest * -1
+        else:
+            cost = 1/smallest
+        
+        ts.transitions.add(transition[0], transition[2], {"cost": cost})
 
     ts.atomic_propositions.add("VALID")
     ts.atomic_propositions.add("WRONG_PORT")
