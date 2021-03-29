@@ -69,7 +69,25 @@ def test_additional_requests_with_tau_single_tower():
     gm.reset_globals()
     print("\n\nEnd of test 4\n\n")
 
+def test_additional_requests_with_empty_state_gap():
+    tower1 = gm.return_tower(0, 2, [], [3 for i in range(2)])
+    system = [tower1]
+    sample_request  = ('no_pref', 8) # port name, time to land
+    sample_request_dict = {0: [(sample_request)]} # tower index maps to a list of (port_name, expiration_time) tuples.
+    
+    rm.configure_realtime(tau=10)
+    
+    additional_requests_input = [[] for i in range(7)]
+    to_append = [[sample_request_dict] for i in range(7)]
+    additional_requests_input = additional_requests_input + to_append
+    print(additional_requests_input)
+    rm.main_loop(system, additional_requests_input)# for i in range(2)])
+    gm.reset_globals()
+
+    print("\n\nEnd of test 5\n\n")
+    
 # test_realtime()
 # test_additional_requests()
-test_additional_requests_with_tau()
+# test_additional_requests_with_tau()
+test_additional_requests_with_empty_state_gap()
 # test_additional_requests_with_tau_single_tower()

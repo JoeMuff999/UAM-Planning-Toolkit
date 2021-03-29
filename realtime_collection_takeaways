@@ -1,0 +1,8 @@
+some bug with randomness...seeding not working. solution is not deterministic for some reason
+
+apparently every label gives you some sort of cost if its unassigned? even finish or all of the number labels were giving costs
+(this is about mvp ^^^)
+and this too! is about mvp: we had to label each node with a unique id, because the same hash is equivalent under tulip terms :P
+
+in terms of data collection, for the traffic stuff, id probably want to show some percentage of invalid states as time progresses?
+just saying total cost is pretty useless in this context, so then I could say percentage invalid after trafic etc etc. i think this would be cool

@@ -431,8 +431,13 @@ def vector_difference(l1, l2):
         diff.append(l1[i] - l2[i])
     return diff
 
-def print_formatted_cost(cost_to_print):
-    print("Most expensive request cost: {}".format(cost_to_print))
+
+def print_formatted_cost(cost_to_print, format_override=False):
+    if not format_override:
+        print("Most expensive request cost: {}".format(cost_to_print))
+    else:
+        print("Path cost {}".format(cost_to_print))
+
 
 def print_formatted_trace_path(trace_to_print):
     print("State path: {}".format(trace_to_print))
@@ -459,7 +464,7 @@ def return_tower(num_requests, num_ports, time_vector, port_max):
     return reworked_graph.ReworkedGraph(port_dict, 1, req, time)
 
 #TODO -> make it so that generate_trace doesn't need a "graph" class as parameter. (ie: just give it a set of states, trans, and labels)
-def generate_trace(graph, override=False):
+def generate_trace(graph, override=False, finish_label="FINISH"):
     # check if synthesis results already exist for the input graph. if so, return stored value
     if not override:
         if graph.base_state in synthesis_dictionary.keys():
@@ -523,7 +528,7 @@ def generate_trace(graph, override=False):
     spec.add_rule(fa1, priority=1, level=1)
     spec.add_rule(fa2, priority=2, level=1)
 
-    (cost, state_path, product_path, wpa) = solve_mvp(ts, "FINISH", spec)
+    (cost, state_path, product_path, wpa) = solve_mvp(ts, finish_label, spec)
     for req in graph.request_vector:
         if req == "wrong_tower":
             cost._value[1] += 1

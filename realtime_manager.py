@@ -1,6 +1,7 @@
 import graph_manager as gm 
 import reworked_graph as rg
 import copy
+import time
 
 TAU = 0
 TIME_STEP = 0
@@ -8,10 +9,12 @@ configured = False
 
 DEFAULT_EMPTY_STATE = rg.State((),(),{"0" : 3, "1" : 3}) # causes port states to "reset", empties out all previously landed aircraft
 
-def configure_realtime(tau=0):
+def configure_realtime(tau=0, override_default_empty_state=rg.State((),(),{"0" : 3, "1" : 3})):
     global TAU
     global configured
+    global DEFAULT_EMPTY_STATE
     TAU = tau
+    DEFAULT_EMPTY_STATE = copy.deepcopy(override_default_empty_state)
     configured = True
     assert("VALID" in DEFAULT_EMPTY_STATE.labels)
     
@@ -19,27 +22,38 @@ def configure_realtime(tau=0):
 """
 Inputs:
     -system of n towers
+    -a list of incoming request dictionaries
 
 Outputs:
+    -timing information
+    -cummulative system cost
+
+To note:
+    -currently not processing the total cost
+    -default state is overriden in configuration
 
 """
 def main_loop(initial_system, additional_requests):
     assert(configured) # force user to configure globals before running
     global TIME_STEP
     global TAU
-
+    timing_info = []
     # minimizing the initial system using the request swapping algorithm
     minimized_system = copy.deepcopy(initial_system)
-    gm.run_minimizing_mvp(minimized_system)
+    # gm.run_minimizing_mvp(minimized_system) # removed request swapping algorithm
     # add it to the first state that is empty
     #obtain minimized traces
     minimized_traces = get_minimized_traces(minimized_system) # the initial plan for our agents. 
     print("minimized_traces" + str(minimized_traces))
     completed_traces = [[] for i in range(len(minimized_traces))]
-    while not are_traces_empty(minimized_traces) or TIME_STEP < len(additional_requests):        
+    while not are_traces_empty(minimized_traces) or TIME_STEP < len(additional_requests): 
+        start_time = time.perf_counter()   
         if TIME_STEP < len(additional_requests) and additional_requests[TIME_STEP] != []: # if there is an incoming request at this time step
             # print('additional requests = ' + str(additional_requests[TIME_STEP]))
             #add to the preferred tower at the TAU state. 
+            print(additional_requests[TIME_STEP])
+            assert(len(additional_requests[TIME_STEP]) <= 1)
+            #NOTE: this will likely only ever iterate once, but thats okay. just don't confuse yourself
             for request_dict in additional_requests[TIME_STEP]:
                 for requested_tower_index in request_dict:
                     requested_tower = minimized_traces[requested_tower_index]
@@ -62,19 +76,21 @@ def main_loop(initial_system, additional_requests):
                             TAU_state.request_vector.append(requested_port)
                             TAU_state.time_vector.append(adjusted_expiration_time) 
                     else:
-                        request_dict[requested_tower_index]
+                        if(len(requested_tower) == 0):
+                            requested_tower.append(copy.deepcopy(DEFAULT_EMPTY_STATE))
                         for index, request in enumerate(request_dict[requested_tower_index]):
                             requested_port = request[0]
                             # add the requests to the first empty state 
                             # for this case, lets say there is a tower that has an empty last state in the sense that it its last state
                             # is a "finish" state. this check here will build off of that state. the other case if its an empty tower, which
-                            # the of course we just use the empty state.
-                            adjusted_expiration_time = request[1] - len(requested_tower) + 1 
-                            print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
+                            # then of course we just use the empty state.
+                            adjusted_expiration_time = request[1] - len(requested_tower) + 1
 
-                            if len(requested_tower[len(requested_tower)-1].request_vector) == 0:
+                            print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
+                            # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
+                            if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
                                 TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
-                                adjusted_expiration_time = request[1] - len(requested_tower) + 2 
+                                # adjusted_expiration_time = request[1] - len(requested_tower) + 2 #NOTE: figure out what this "+2" was for...
 
                             TAU_state.request_vector = list(TAU_state.request_vector)
                             TAU_state.time_vector = list(TAU_state.time_vector)
@@ -83,34 +99,64 @@ def main_loop(initial_system, additional_requests):
                     
                     # so if we add to the first empty state, then we need to pad it with empty states.
                     # yes, for record keeping. if there isn't and additional request, our tower will have no states!
-
+                    # NOTE: graph construction happens here
                     TAU_graph = rg.ReworkedGraph(
                         TAU_state._port_dict, 
                         1, 
                         TAU_state.request_vector, 
                         TAU_state.time_vector
                     )
+                    # NOTE: mvp happens here
+                    TAU_trace = gm.generate_trace(TAU_graph, override=True)[1]
 
-                    TAU_trace = gm.generate_trace(TAU_graph)[1]
                     print("Tau trace = " + str(TAU_trace))
                     if was_big_enough:
                         minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
                     else:
                         minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
                     print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
+            end_time = time.perf_counter()
+        else:
+            end_time = start_time
+
+
         # what about the case when there are no more incoming requests for a while. then, we clearly won't have enough empty states
         # in fact, when will this even be called again? this is fine actually
         # what about the case of padding after the tau state? do we need padding if it adds the empty state anyways.
         record_completed_state(minimized_traces, completed_traces)
+
+
+        # record the time it took to replan around this round of incoming requests
+        time_per_time_step = end_time - start_time
+        timing_info.append(time_per_time_step)
 
         TIME_STEP += 1
         print("completed traces = " + str(completed_traces))
 
     for trace in minimized_traces:
         assert(len(trace) == 0)
+    return completed_traces, timing_info
     # for index in range(len(minimized_traces)):
     #     for state_index, state in enumerate(minimized_traces[index]):
     #         assert(completed_traces[index][state_index] == state)
+
+def get_mvp_output(completed_traces):
+    finish_label = "REALTIME_FINISH"
+    # apply label to final state of all towers in the trace
+    for tower in completed_traces:
+        state = tower[len(tower)-1]
+        prev_labels = list(copy.copy(state.labels))
+        prev_labels.append("REALTIME_FINISH")
+        tower[len(tower)-1].labels = tuple(prev_labels)
+    
+    mvp_output_per_tower = []    
+    for tower in completed_traces:
+        # append cummulative cost to array
+        mvp_output_per_tower.append(copy.deepcopy(get_realtime_cost(tower, finish_label=finish_label)))
+        # print()
+        
+    return mvp_output_per_tower
+
 
 
 # for any trace that does not have a valid state at index TAU, fill up with empty states
@@ -176,7 +222,7 @@ Outputs:
 def get_minimized_traces(system):
     traces = []
     for tower in system:
-        traces.append(gm.generate_trace(tower)[1]) # 1 is the index for the state path (trace)
+        traces.append(gm.generate_trace(tower, override=True)[1]) # 1 is the index for the state path (trace)
     return traces
     
 
@@ -191,3 +237,87 @@ Outputs:
 def initialize_system(initial_system):
     gm.run_minimizing_mvp(initial_system)
 
+
+
+'''
+rewriting trace generation function with realtime spec
+'''
+from tulip.transys import WeightedKripkeStructure as WKS
+from tulip.transys.automata import WeightedFiniteStateAutomaton as WFA
+from tulip.spec.prioritized_safety import PrioritizedSpecification
+from tulip.mvp import solve as solve_mvp
+from tulip.transys.mathset import PowerSet
+
+
+def get_realtime_cost(trace, finish_label="FINISH"):
+
+    # NOTE: crazy thing.. so you have repeat states, and then tulip will treat them as the same state, even if they are not... (such as empty state). thus, you need to give each state a unique id
+    for index,s in enumerate(trace):
+        prev_labels = list(s.labels)
+        prev_labels.append(str(index))        
+        s.labels = tuple(prev_labels)
+
+    ts = WKS()
+    ts.states.add_from(trace)
+    ts.states.initial.add(trace[0])
+
+    for index in range(1, len(trace)):
+        ts.transitions.add(trace[index-1], trace[index], {"cost" : 1})
+
+    ts.atomic_propositions.add("VALID")
+    ts.atomic_propositions.add("WRONG_PORT")
+    ts.atomic_propositions.add("OVERFLOWED_PORT")
+    ts.atomic_propositions.add("FINISH")
+    ts.atomic_propositions.add(finish_label)
+    # NOTE: SEE ABOVE :)
+
+    for s in trace:
+        prev_labels = list(s.labels)
+        del prev_labels[len(s.labels)-1]      
+        ts.states[s]["ap"] = set(prev_labels)
+
+    fa0 = WFA()
+    fa0.atomic_propositions.add_from(ts.atomic_propositions)
+    fa0.states.add_from({"q0"})
+    fa0.states.initial.add("q0")
+    fa0.states.accepting.add("q0")
+
+    ap_without_valid = copy.deepcopy(fa0.atomic_propositions)
+    ap_without_valid.remove("VALID")
+    valid = {"VALID"}
+
+    for letter in PowerSet(ap_without_valid):  # union of everything with valid
+        fa0.transitions.add("q0", "q0", letter=set(letter) | valid)
+
+    fa1 = WFA()
+    fa1.atomic_propositions.add_from(ts.atomic_propositions)
+    fa1.states.add_from({"q0"})
+    fa1.states.initial.add("q0")
+    fa1.states.accepting.add("q0")
+
+    ap_without_wrong_port = copy.deepcopy(fa1.atomic_propositions)
+    ap_without_wrong_port.remove("WRONG_PORT")
+    wrong_port = {"WRONG_PORT"}
+
+    for letter in PowerSet(ap_without_wrong_port):
+        fa1.transitions.add("q0", "q0", letter=letter)
+
+    fa2 = WFA()
+    fa2.atomic_propositions.add_from(ts.atomic_propositions)
+    fa2.states.add_from({"q0"})
+    fa2.states.initial.add("q0")
+    fa2.states.accepting.add("q0")
+
+    ap_without_port_overflow = copy.deepcopy(fa2.atomic_propositions)
+    ap_without_port_overflow.remove("OVERFLOWED_PORT")
+
+    for letter in PowerSet(ap_without_port_overflow):
+        fa2.transitions.add("q0", "q0", letter=letter)
+
+    spec = PrioritizedSpecification()
+    spec.add_rule(fa0, priority=1, level=0)
+    spec.add_rule(fa1, priority=1, level=1)
+    spec.add_rule(fa2, priority=2, level=1)
+
+    (cost, state_path, product_path, wpa) = solve_mvp(ts, finish_label, spec) 
+    return (cost, state_path, product_path, wpa)
