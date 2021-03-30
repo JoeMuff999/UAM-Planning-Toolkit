@@ -9,11 +9,16 @@ configured = False
 
 DEFAULT_EMPTY_STATE = rg.State((),(),{"0" : 3, "1" : 3}) # causes port states to "reset", empties out all previously landed aircraft
 
-def configure_realtime(tau=0, override_default_empty_state=rg.State((),(),{"0" : 3, "1" : 3})):
+def configure_realtime(tau=0, override_default_empty_state=None):
     global TAU
     global configured
     global DEFAULT_EMPTY_STATE
+    global TIME_STEP
     TAU = tau
+    TIME_STEP = 0
+
+    if(override_default_empty_state is None):
+        override_default_empty_state = rg.State((),(),{"0" : 3, "1" : 3})
     DEFAULT_EMPTY_STATE = copy.deepcopy(override_default_empty_state)
     configured = True
     assert("VALID" in DEFAULT_EMPTY_STATE.labels)
@@ -35,8 +40,11 @@ To note:
 """
 def main_loop(initial_system, additional_requests):
     assert(configured) # force user to configure globals before running
+    
+    
     global TIME_STEP
     global TAU
+    TIME_STEP = 0
     timing_info = []
     # minimizing the initial system using the request swapping algorithm
     minimized_system = copy.deepcopy(initial_system)
@@ -44,14 +52,14 @@ def main_loop(initial_system, additional_requests):
     # add it to the first state that is empty
     #obtain minimized traces
     minimized_traces = get_minimized_traces(minimized_system) # the initial plan for our agents. 
-    print("minimized_traces" + str(minimized_traces))
+    # print("minimized_traces" + str(minimized_traces))
     completed_traces = [[] for i in range(len(minimized_traces))]
     while not are_traces_empty(minimized_traces) or TIME_STEP < len(additional_requests): 
         start_time = time.perf_counter()   
         if TIME_STEP < len(additional_requests) and additional_requests[TIME_STEP] != []: # if there is an incoming request at this time step
             # print('additional requests = ' + str(additional_requests[TIME_STEP]))
             #add to the preferred tower at the TAU state. 
-            print(additional_requests[TIME_STEP])
+            # print(additional_requests[TIME_STEP])
             assert(len(additional_requests[TIME_STEP]) <= 1)
             #NOTE: this will likely only ever iterate once, but thats okay. just don't confuse yourself
             for request_dict in additional_requests[TIME_STEP]:
@@ -65,7 +73,7 @@ def main_loop(initial_system, additional_requests):
                     else:
                         # fill_with_empty_states(requested_tower) 
                         TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
-                    print("additional requests for this tower = " + str(request_dict[requested_tower_index]))
+                    # print("additional requests for this tower = " + str(request_dict[requested_tower_index]))
                     # make a separate method for this code
                     if was_big_enough:
                         for index, request in enumerate(request_dict[requested_tower_index]):
@@ -86,7 +94,7 @@ def main_loop(initial_system, additional_requests):
                             # then of course we just use the empty state.
                             adjusted_expiration_time = request[1] - len(requested_tower) + 1
 
-                            print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
+                            # print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
                             # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
                             if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
                                 TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
@@ -109,12 +117,12 @@ def main_loop(initial_system, additional_requests):
                     # NOTE: mvp happens here
                     TAU_trace = gm.generate_trace(TAU_graph, override=True)[1]
 
-                    print("Tau trace = " + str(TAU_trace))
+                    # print("Tau trace = " + str(TAU_trace))
                     if was_big_enough:
                         minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
                     else:
                         minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
-                    print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
+                    # print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
             end_time = time.perf_counter()
         else:
             end_time = start_time
@@ -131,7 +139,7 @@ def main_loop(initial_system, additional_requests):
         timing_info.append(time_per_time_step)
 
         TIME_STEP += 1
-        print("completed traces = " + str(completed_traces))
+        # print("completed traces = " + str(completed_traces))
 
     for trace in minimized_traces:
         assert(len(trace) == 0)
@@ -181,37 +189,7 @@ def record_completed_state(minimized_traces, completed_traces):
         else:
             completed_traces[index].append(minimized_traces[index][0])
             del minimized_traces[index][0]
-    
-#     #lock the next TAU actions 
-#     locked_traces = []
-#     for trace in minimized_traces:
-#         # if TAU is greater than the trace, copy the whole thing, create empty states for it
-#         # if we have TAU=3, need 4 corresponding states, therefore, len(trace) must be greater than TAU
-#         trace_length = len(trace)
-#         if trace_length <= TAU:
-#             assert(trace_length != 1)
-#             #setup the "empty state" which we will use to fill the remainder of the trace until TAU
-#             empty_state = None
-            
-#             if trace_length == 0: # means no port dict to copy over
-#                 empty_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
-#             else:
-#                 final_state_port_dict = copy.deepcopy(trace[trace_length-1]._port_dict)
-#                 empty_state = rg.State((),(),final_state_port_dict)
-# `           #we need TAU+1 states, or TAU +1 - len(trace) states extra
-#             for i in range(TAU + 1 - trace_length): 
-#                 trace.append(empty_state)
-#         #now that our traces are properly sized, lets "lock" them
-#         locked_traces.append(copy.deepcopy(trace[:(TAU+1)])) # copies from 0 to stop - 1, so from 0 to TAU
 
-        
-    
-            
-
-
-
-
-# def stringify_system()
 
 """
 Inputs:

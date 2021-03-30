@@ -462,7 +462,6 @@ def return_tower(num_requests, num_ports, time_vector, port_max):
         port_dict[key] = port_max[i]
     time = time_vector
     return reworked_graph.ReworkedGraph(port_dict, 1, req, time)
-
 #TODO -> make it so that generate_trace doesn't need a "graph" class as parameter. (ie: just give it a set of states, trans, and labels)
 def generate_trace(graph, override=False, finish_label="FINISH"):
     # check if synthesis results already exist for the input graph. if so, return stored value
@@ -478,9 +477,22 @@ def generate_trace(graph, override=False, finish_label="FINISH"):
     #important for a realtime system, because what may be equally now may not be equally good later.
     for transition in graph.transitions:
         smallest = 99999
+        total_sum = 0
         for time in transition[2].time_vector:
             if time < smallest:
                 smallest = time
+                total_sum+= time
+        sum_cost = 0
+        if total_sum < 0:
+            sum_cost = total_sum * -1
+        elif total_sum == 0:
+            sum_cost = 1
+        elif total_sum ==1:
+            sum_cost = .9
+        elif total_sum == -1:
+            sum_cost = 1.1
+        else:
+            sum_cost = 1/total_sum
         cost = 0
         if smallest == 0:
             cost = 1
@@ -493,7 +505,7 @@ def generate_trace(graph, override=False, finish_label="FINISH"):
         else:
             cost = 1/smallest
         
-        ts.transitions.add(transition[0], transition[2], {"cost": cost})
+        ts.transitions.add(transition[0], transition[2], {"cost": cost + sum_cost})
 
     ts.atomic_propositions.add("VALID")
     ts.atomic_propositions.add("WRONG_PORT")
@@ -543,8 +555,8 @@ def generate_trace(graph, override=False, finish_label="FINISH"):
 
     spec = PrioritizedSpecification()
     spec.add_rule(fa0, priority=1, level=0)
-    spec.add_rule(fa1, priority=1, level=1)
-    spec.add_rule(fa2, priority=2, level=1)
+    # spec.add_rule(fa1, priority=1, level=1)
+    # spec.add_rule(fa2, priority=2, level=1)
 
     (cost, state_path, product_path, wpa) = solve_mvp(ts, finish_label, spec)
     for req in graph.request_vector:
