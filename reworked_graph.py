@@ -192,11 +192,11 @@ class State(object):
     def generate_labels(self):
         label_tmp = []
         if not self._contains_expired_request():
-            if self.previous_state is not None: #add this extra check so that states with no requests in them aren't automatically valid
-                if "VALID" in self.previous_state.labels:
-                    label_tmp.append("VALID")
-            else:
-                label_tmp.append("VALID")
+            # if self.previous_state is not None: #add this extra check so that states with no requests in them aren't automatically valid
+            #     if "VALID" in self.previous_state.labels:
+            #         label_tmp.append("VALID")
+            # else:
+            label_tmp.append("VALID")
         if len(self.request_vector) is 0:
             label_tmp.append("FINISH")
         if self.violated_port:

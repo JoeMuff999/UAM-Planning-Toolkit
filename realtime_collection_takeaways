@@ -6,3 +6,36 @@ and this too! is about mvp: we had to label each node with a unique id, because 
 
 in terms of data collection, for the traffic stuff, id probably want to show some percentage of invalid states as time progresses?
 just saying total cost is pretty useless in this context, so then I could say percentage invalid after trafic etc etc. i think this would be cool
+
+NOTE: realtime lables are incorrect
+
+just gonna let you know that NOTE: overflowed ports are not working. ( at least for realtime): see how some lines don't have the label
+State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, -1, -1) Port states of :: {'0': -12} Labels :: ('OVERFLOWED_PORT', '21')  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, -1, 1) Port states of :: {'0': -13} Labels :: ('22',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, -1) Port states of :: {'0': -14} Labels :: ('OVERFLOWED_PORT', '23')  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, 4) Port states of :: {'0': -15} Labels :: ('24',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, 3, 4, 3, 0, 3) Port states of :: {'0': -16} Labels :: ('25',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, 2, 3, 2, 2) Port states of :: {'0': -17} Labels :: ('OVERFLOWED_PORT', '26')  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, 1, 2, 1, 1, 4, 2) Port states of :: {'0': -18} Labels :: ('27',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (0, 1, 0, 0, 3, 1, 3) Port states of :: {'0': -19} Labels :: ('VALID', '28')  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, 2, 0, 2, 4) Port states of :: {'0': -20} Labels :: ('29',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, -1, 1, 3) Port states of :: {'0': -21} Labels :: ('OVERFLOWED_PORT', '30') 
+
+1. Best case: Know all the requests from the beginning and synthesize the trace based on the complete knowledge
+2. Tau = 0: Process the requests as they arrive but no commitment.
+3. Increase Tau
+
+the issue is that if a request is invalid after some time, then you need to make the previous states also invalid. 
+
+solution: i add the requests to the tau states manually. this is fine because they cannot be modified anyways. potential error with the fact that we copy over the previous states, also maybe an error with the fact that zero request towers exist (:P). for now, it seems to be decently correct, and doesn't go against most logic (except that this is possible):
+Tau = 0 -> 9, see how the higher taus sometimes bounce between negative values (this is clearly not possible, or shouldn't be possible, but here we are)
+-30
+-37
+-49
+-51
+-53
+-53
+-52
+-51
+-52
+-51

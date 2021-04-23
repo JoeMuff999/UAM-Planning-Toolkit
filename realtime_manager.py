@@ -54,6 +54,7 @@ def main_loop(initial_system, additional_requests):
     minimized_traces = get_minimized_traces(minimized_system) # the initial plan for our agents. 
     # print("minimized_traces" + str(minimized_traces))
     completed_traces = [[] for i in range(len(minimized_traces))]
+    sum_of_requests = 0
     while not are_traces_empty(minimized_traces) or TIME_STEP < len(additional_requests): 
         start_time = time.perf_counter()   
         if TIME_STEP < len(additional_requests) and additional_requests[TIME_STEP] != []: # if there is an incoming request at this time step
@@ -67,13 +68,15 @@ def main_loop(initial_system, additional_requests):
                     requested_tower = minimized_traces[requested_tower_index]
                     # check if requested tower has an existing TAU state, else its an empty state
                     was_big_enough = False
+                    TAU_state = None
                     if len(requested_tower) > TAU:
                         TAU_state = copy.deepcopy(requested_tower[TAU]) 
+                        TAU_state.labels = TAU_state.generate_labels()
                         was_big_enough = True
                     else:
                         # fill_with_empty_states(requested_tower) 
                         TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
-                    # print("additional requests for this tower = " + str(request_dict[requested_tower_index]))
+                    print("additional requests for tower " + str(requested_tower_index) + " = " + str(request_dict[requested_tower_index]))
                     # make a separate method for this code
                     if was_big_enough:
                         for index, request in enumerate(request_dict[requested_tower_index]):
@@ -84,8 +87,8 @@ def main_loop(initial_system, additional_requests):
                             TAU_state.request_vector.append(requested_port)
                             TAU_state.time_vector.append(adjusted_expiration_time) 
                     else:
-                        if(len(requested_tower) == 0):
-                            requested_tower.append(copy.deepcopy(DEFAULT_EMPTY_STATE))
+                        # if(len(requested_tower) == 0):
+                        #     requested_tower.append(copy.deepcopy(DEFAULT_EMPTY_STATE))
                         for index, request in enumerate(request_dict[requested_tower_index]):
                             requested_port = request[0]
                             # add the requests to the first empty state 
@@ -96,8 +99,8 @@ def main_loop(initial_system, additional_requests):
 
                             # print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
                             # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
-                            if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
-                                TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
+                            # if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
+                            #     TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
                                 # adjusted_expiration_time = request[1] - len(requested_tower) + 2 #NOTE: figure out what this "+2" was for...
 
                             TAU_state.request_vector = list(TAU_state.request_vector)
@@ -118,11 +121,61 @@ def main_loop(initial_system, additional_requests):
                     TAU_trace = gm.generate_trace(TAU_graph, override=True)[1]
 
                     # print("Tau trace = " + str(TAU_trace))
+                    # print(str(requested_tower))
+
                     if was_big_enough:
+                        # assert(len(requested_tower[0].request_vector) != 0 or TAU == 0)
+                        for time_index, state in enumerate(requested_tower[:TAU]):
+                            for index, request in enumerate(request_dict[requested_tower_index]):
+                                requested_port = request[0]
+                                adjusted_expiration_time = request[1] - time_index
+                                state.request_vector = list(state.request_vector)
+                                state.time_vector = list(state.time_vector)
+                                state.request_vector.append(requested_port)
+                                state.time_vector.append(adjusted_expiration_time) 
+                                state.request_vector = tuple(state.request_vector)
+                                state.time_vector = tuple(state.time_vector)
+                                state.labels = state.generate_labels()
+
                         minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
                     else:
+                        # if(len(requested_tower) > 0):
+                            # print(TAU)
+                            # assert(len(requested_tower[0].request_vector) != 0 )
+                        for time_index, state in enumerate(requested_tower[:-1]):
+                            for index, request in enumerate(request_dict[requested_tower_index]):
+                                requested_port = request[0]
+                                adjusted_expiration_time = request[1] - time_index
+                                state.request_vector = list(state.request_vector)
+                                state.time_vector = list(state.time_vector)
+                                state.request_vector.append(requested_port)
+                                state.time_vector.append(adjusted_expiration_time) 
+                                state.request_vector = tuple(state.request_vector)
+                                state.time_vector = tuple(state.time_vector)
+                                state.labels = state.generate_labels()
                         minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
-                    # print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
+
+                    print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
+            current_num_requests = 0
+            for trace in minimized_traces:
+                if(len(trace) > 0):
+                    current_num_requests += len(trace[0].request_vector)
+            num_reqs = 0
+            for key in additional_requests[TIME_STEP][0]:
+                print(additional_requests[TIME_STEP][0][key])
+                num_reqs += len(additional_requests[TIME_STEP][0][key])
+
+            # print (current_num_requests)
+            # print (sum_of_requests)
+            # print (num_reqs)
+            # print (TIME_STEP)
+            # if sum_of_requests == 0:
+
+            #     assert(current_num_requests == sum_of_requests + num_reqs)
+            # else:
+
+            #     assert(current_num_requests == sum_of_requests + num_reqs -1)
+            sum_of_requests = current_num_requests
             end_time = time.perf_counter()
         else:
             end_time = start_time
@@ -187,6 +240,7 @@ def record_completed_state(minimized_traces, completed_traces):
         if len(trace) == 0: # ie: no more states, is empty system/goal state
             completed_traces[index].append(copy.deepcopy(DEFAULT_EMPTY_STATE))
         else:
+            # print("recorded state " + str(minimized_traces[index][0]) + " for tower " + str(index))
             completed_traces[index].append(minimized_traces[index][0])
             del minimized_traces[index][0]
 

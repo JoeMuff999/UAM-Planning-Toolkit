@@ -85,9 +85,22 @@ def test_additional_requests_with_empty_state_gap():
     gm.reset_globals()
 
     print("\n\nEnd of test 5\n\n")
+
+def debug_discrepancy():
+    tower1 = gm.return_tower(2, 2, [20,20], [3 for i in range(2)])
+    system = [tower1]
+    sample_request  = ('no_pref', 8) # port name, time to land
+    sample_request_dict = {0: [sample_request,sample_request]} # tower index maps to a list of (port_name, expiration_time) tuples.
     
+    rm.configure_realtime(tau=2)
+    to_append = [[sample_request_dict] for i in range(3)]
+    (completed_traces, timings) = rm.main_loop(system, to_append)# for i in range(2)])
+    mvp_output_per_tower = rm.get_mvp_output(completed_traces)
+    print(gm.print_formatted_trace_path(mvp_output_per_tower[0][1]))
+    gm.reset_globals()
+
 # test_realtime()
 # test_additional_requests()
 # test_additional_requests_with_tau()
-test_additional_requests_with_empty_state_gap()
+# test_additional_requests_with_empty_state_gap()
 # test_additional_requests_with_tau_single_tower()
