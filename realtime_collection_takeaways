@@ -39,3 +39,14 @@ Tau = 0 -> 9, see how the higher taus sometimes bounce between negative values (
 -51
 -52
 -51
+
+
+record computation time
+construct the hand case for when yuou can do the global cost from start to finish
+show concentrated traffic per tower
+
+compare against first come first serve strategy in over the same distribution. 
+
+make the high traffic as one big block, could also change the density of how they come in
+
+try to hook it up with the minimizing passing rounds stuff ahh...
