@@ -67,7 +67,7 @@ once this has been done for all incoming requests, we run the heuristic on TAU_g
 with these modified graphs, we thn proceed with the tau trace stuff as normal.
 
 
-#NOTE: You WILL need to change the manual addition of the requests to the pre-TAU states. when you say enumerate(request_dict[requested_tower_index]), you will need to change this to account for the request swapping. now, you could just directly take it from the root of the TAU_graph, BUT this could include requests that were already present. 
+#NOTE: You WILL need to change the manual addition of the requests to the pre-TAU states. when you say enumerate(request_dict[requested_tower_index]), you will need to change this to account for the request swapping. now, you could just directly take it from the root of the TAU_graph, BUT this could include requests that were already present. THE MOST CURRENT ISSUE CURRENTLY :P
 
 another consideration: if a tower doesn't have an incoming request, you will be dealing with outdated information. this is NOT true.
 because they are technically future planned, they already have "time delay" factored in. 
