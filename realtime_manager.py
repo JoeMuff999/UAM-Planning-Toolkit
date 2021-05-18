@@ -63,6 +63,7 @@ def main_loop(initial_system, additional_requests):
             # print(additional_requests[TIME_STEP])
             assert(len(additional_requests[TIME_STEP]) <= 1)
             #NOTE: this will likely only ever iterate once, but thats okay. just don't confuse yourself
+            #there is only ONE request_dict per additional_requests[TIME_STEP]
             for request_dict in additional_requests[TIME_STEP]:
                 for requested_tower_index in request_dict:
                     requested_tower = minimized_traces[requested_tower_index]

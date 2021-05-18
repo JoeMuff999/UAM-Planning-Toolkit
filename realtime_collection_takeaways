@@ -27,7 +27,7 @@ State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no
 
 the issue is that if a request is invalid after some time, then you need to make the previous states also invalid. 
 
-solution: i add the requests to the tau states manually. this is fine because they cannot be modified anyways. potential error with the fact that we copy over the previous states, also maybe an error with the fact that zero request towers exist (:P). for now, it seems to be decently correct, and doesn't go against most logic (except that this is possible):
+solution: i add the requests to the 0 through tau states manually. this is fine because they cannot be modified anyways. potential error with the fact that we copy over the previous states, also maybe an error with the fact that zero request towers exist (:P). for now, it seems to be decently correct, and doesn't go against most logic (except that this is possible):
 Tau = 0 -> 9, see how the higher taus sometimes bounce between negative values (this is clearly not possible, or shouldn't be possible, but here we are)
 -30
 -37
@@ -50,3 +50,38 @@ compare against first come first serve strategy in over the same distribution.
 make the high traffic as one big block, could also change the density of how they come in
 
 try to hook it up with the minimizing passing rounds stuff ahh...
+
+considerations:
+    -passing penalty
+    -passing them in the first place, you can only pass between graphs themselves...
+    -passing needs to be done between all towers with modifiable TAU+ states, not just those who have additional requests for a time step
+
+
+could just pass between all of the TAU+ graphs
+
+first, we initialize a list of size num_towers to None, call it TAU_graphs
+then, if we have additional requests, we set the TAU_graphs[tower] to be equal to the TAU graph for that tower
+    conditions: if TAU_graphs[tower] == None and tau_graph is empty, then don't do anything
+    else, replace the existing TAU_graph with the new TAU_graph
+once this has been done for all incoming requests, we run the heuristic on TAU_graphs
+with these modified graphs, we thn proceed with the tau trace stuff as normal.
+
+
+#NOTE: You WILL need to change the manual addition of the requests to the pre-TAU states. when you say enumerate(request_dict[requested_tower_index]), you will need to change this to account for the request swapping. now, you could just directly take it from the root of the TAU_graph, BUT this could include requests that were already present. 
+
+another consideration: if a tower doesn't have an incoming request, you will be dealing with outdated information. this is NOT true.
+because they are technically future planned, they already have "time delay" factored in. 
+
+another consideration: if you are passing to a tower that doesn't have more than TAU states, then the TAU+ graph will just be an empty graph. This means there exists a more optimal solution to accept the request in the time before TAU.
+
+ex:
+tower 1: requests-empty-TAU-empty
+tower 2: requests-requests-TAU-requests
+
+tower 1 will accept the requests from tower 2 as such:
+tower 1: requests-empty-TAU-requests
+tower 2: requests-requests-TAU-empty
+
+instead of 
+tower 1: requests-requests-TAU-empty
+tower 2: requests-requests-TAU-empty
