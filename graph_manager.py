@@ -320,8 +320,8 @@ def do_round(system, round_index, rollout_index):
 #TODO: make each helper method take in a list of traces
 def add_req_to_tower(old_tower, new_request_time):
     #copy over old tower parameters then add the new request
-    req_copy = copy.deepcopy(old_tower.request_vector)
-    time_copy = copy.deepcopy(old_tower.max_time_per_req_vector)
+    req_copy = list(copy.deepcopy(old_tower.request_vector))
+    time_copy = list(copy.deepcopy(old_tower.max_time_per_req_vector))
     port_dict = copy.deepcopy(old_tower.port_limits)
     req_per_step = old_tower.max_accepted_requests
     req_copy.append('wrong_tower')
@@ -332,8 +332,8 @@ def add_req_to_tower(old_tower, new_request_time):
     return new_tower
 
 def del_req_from_tower(old_tower, index_of_request_to_remove):
-    req_copy = copy.deepcopy(old_tower.request_vector)
-    time_copy = copy.deepcopy(old_tower.max_time_per_req_vector)
+    req_copy = list(copy.deepcopy(old_tower.request_vector))
+    time_copy = list(copy.deepcopy(old_tower.max_time_per_req_vector))
     port_dict = copy.deepcopy(old_tower.port_limits)
     req_per_step = old_tower.max_accepted_requests
 
@@ -345,8 +345,8 @@ def del_req_from_tower(old_tower, index_of_request_to_remove):
 
 def cost_with_new_vec(input_graph, new_request_time):
     # create new tower parameters
-    req_copy = copy.deepcopy(input_graph.request_vector)
-    time_copy = copy.deepcopy(input_graph.max_time_per_req_vector)
+    req_copy = list(copy.deepcopy(input_graph.request_vector))
+    time_copy = list(copy.deepcopy(input_graph.max_time_per_req_vector))
     port_dict = copy.deepcopy(input_graph.port_limits)
     req_per_step = input_graph.max_accepted_requests
     req_copy.append('wrong_tower')
@@ -358,8 +358,8 @@ def cost_with_new_vec(input_graph, new_request_time):
     return new_cost
 
 def cost_with_removed_vec(input_graph, index_of_request_to_remove):
-    req_copy = copy.deepcopy(input_graph.request_vector)
-    time_copy = copy.deepcopy(input_graph.max_time_per_req_vector)
+    req_copy = list(copy.deepcopy(input_graph.request_vector))
+    time_copy = list(copy.deepcopy(input_graph.max_time_per_req_vector))
     port_dict = copy.deepcopy(input_graph.port_limits)
     req_per_step = input_graph.max_accepted_requests
 

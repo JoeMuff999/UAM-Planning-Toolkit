@@ -79,34 +79,35 @@ def main_loop(initial_system, additional_requests):
                 else:
                     # fill_with_empty_states(requested_tower) 
                     TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
-                print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
-                # make a separate method for this code
-                if was_big_enough:
-                    for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
-                        print (additional_requests[TIME_STEP][0][requested_tower_index])
-                        requested_port = request[0]
-                        adjusted_expiration_time = request[1] - TAU 
-                        TAU_state.request_vector = list(TAU_state.request_vector)
-                        TAU_state.time_vector = list(TAU_state.time_vector)
-                        TAU_state.request_vector.append(requested_port)
-                        TAU_state.time_vector.append(adjusted_expiration_time) 
-                else:
-                    for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
-                        requested_port = request[0]
-                        # add the requests to the first empty state 
-                        # for this case, lets say there is a tower that has an empty last state in the sense that it its last state
-                        # is a "finish" state. this check here will build off of that state. the other case if its an empty tower, which
-                        # then of course we just use the empty state.
-                        adjusted_expiration_time = request[1] - len(requested_tower) + 1
-                        # print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
-                        # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
-                        # if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
-                        #     TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
-                            # adjusted_expiration_time = request[1] - len(requested_tower) + 2 #NOTE: figure out what this "+2" was for...
-                        TAU_state.request_vector = list(TAU_state.request_vector)
-                        TAU_state.time_vector = list(TAU_state.time_vector)
-                        TAU_state.request_vector.append(requested_port)
-                        TAU_state.time_vector.append(adjusted_expiration_time) 
+                if additional_requests[TIME_STEP][0].get(requested_tower_index,None) != None:            
+                    print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
+                    # make a separate method for this code
+                    if was_big_enough:
+                        for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
+                            print (additional_requests[TIME_STEP][0][requested_tower_index])
+                            requested_port = request[0]
+                            adjusted_expiration_time = request[1] - TAU 
+                            TAU_state.request_vector = list(TAU_state.request_vector)
+                            TAU_state.time_vector = list(TAU_state.time_vector)
+                            TAU_state.request_vector.append(requested_port)
+                            TAU_state.time_vector.append(adjusted_expiration_time) 
+                    else:
+                        for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
+                            requested_port = request[0]
+                            # add the requests to the first empty state 
+                            # for this case, lets say there is a tower that has an empty last state in the sense that it its last state
+                            # is a "finish" state. this check here will build off of that state. the other case if its an empty tower, which
+                            # then of course we just use the empty state.
+                            adjusted_expiration_time = request[1] - len(requested_tower) + 1
+                            # print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
+                            # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
+                            # if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
+                            #     TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
+                                # adjusted_expiration_time = request[1] - len(requested_tower) + 2 #NOTE: figure out what this "+2" was for...
+                            TAU_state.request_vector = list(TAU_state.request_vector)
+                            TAU_state.time_vector = list(TAU_state.time_vector)
+                            TAU_state.request_vector.append(requested_port)
+                            TAU_state.time_vector.append(adjusted_expiration_time) 
                 
                 # so if we add to the first empty state, then we need to pad it with empty states.
                 # yes, for record keeping. if there isn't and additional request, our tower will have no states!
