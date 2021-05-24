@@ -1,4 +1,7 @@
+tulip-control/
 venv
+myenv
+
 *.pyc
 .idea
 ###### -- below is from https://github.com/github/gitignore/blob/master/Python.gitignore -- ######

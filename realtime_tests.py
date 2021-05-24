@@ -99,8 +99,9 @@ def debug_discrepancy():
     print(gm.print_formatted_trace_path(mvp_output_per_tower[0][1]))
     gm.reset_globals()
 
+# debug_discrepancy()
 # test_realtime()
-# test_additional_requests()
+test_additional_requests()
 # test_additional_requests_with_tau()
 # test_additional_requests_with_empty_state_gap()
 # test_additional_requests_with_tau_single_tower()

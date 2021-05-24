@@ -562,6 +562,8 @@ def generate_trace(graph, override=False, finish_label="FINISH"):
     #NOTE: manually tagging on extra cost if a request was originally intended for a different tower. 
     #trust me, this works b/c the swapping algorithm is the one who checks the costs 
     #(if you are wondering why you don't add these costs before synthesis)
+    #NOTE: FOR REALTIME PURPOSES, I AM REMOVING THE PORT COSTS!!!! 
+    cost._value[1] = 0
     for req in graph.request_vector:
         if req == "wrong_tower":
             cost._value[1] += 1

@@ -85,3 +85,16 @@ tower 2: requests-requests-TAU-empty
 instead of 
 tower 1: requests-requests-TAU-empty
 tower 2: requests-requests-TAU-empty
+
+is it possible that you might swap requests that have been added to states before TAU?
+it probably is. so now you need to fix this manual addition thing. I think there is definitely a better way to do it. 
+#TODO: FIX MANUAL ADDITION:
+two issues currently:
+    how to get the actual new requests after swapping
+    when swapping, manually added requests could actually become incorrect if that request is swapped away. a tower would incur an expiration penatly for a request that no longer belongs to it 
+
+a nice solution would be to only occur the maximum penatly of a request, but currently there is no connection between requests, even if they are technically the same. 
+
+basically, you cannot only guarantee that one of the TAU state requests should be in the previous states. This guaranteed state is the one that is actually going to be accepted during the TAU time step. All of the others could potentially be switched out. SO, what we can do is only incur a penalty for the request which is going to be accepted. We can do a pretty simple algorithm to figure out which one it is, but this is a bit hacky. The advantage of this method is that it guarantees you will only incur penalty for requests which will actually be accepted. I don't like this fix as I believe there must be some bugs with it
+
+understand that because all requests have a minimum initial expiration of 0, that there will always be enough states to fully incur the negative penalty. at max, a request can have -TAU as its expiration. 
