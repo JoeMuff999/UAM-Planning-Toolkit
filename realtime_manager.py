@@ -166,7 +166,7 @@ def main_loop(initial_system, additional_requests):
                     #             state.labels = state.generate_labels()
                     #     minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
 
-            print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
+                print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
             # current_num_requests = 0
             # for trace in minimized_traces:
             #     if(len(trace) > 0):
@@ -207,6 +207,8 @@ def main_loop(initial_system, additional_requests):
 
     for trace in minimized_traces:
         assert(len(trace) == 0)
+
+    
     return completed_traces, timing_info
     # for index in range(len(minimized_traces)):
     #     for state_index, state in enumerate(minimized_traces[index]):

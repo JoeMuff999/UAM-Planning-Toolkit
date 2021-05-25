@@ -99,9 +99,32 @@ def debug_discrepancy():
     print(gm.print_formatted_trace_path(mvp_output_per_tower[0][1]))
     gm.reset_globals()
 
+def test_heuristic():
+    tower0 = gm.return_tower(0, 2, [], [3 for i in range(2)])
+    tower1 = gm.return_tower(0, 2, [], [3 for i in range(2)])
+    system = [tower0, tower1]
+    sample_request  = ('no_pref', 0) # port name, time to land
+    sample_request_dict = {0: [(sample_request), (sample_request)]} # tower index maps to a list of (port_name, expiration_time) tuples.
+    sample_request_dict_other = {1: [(sample_request), (sample_request)]} # tower index maps to a list of (port_name, expiration_time) tuples.
+
+    rm.configure_realtime(tau=0)
+    
+    additional_requests_input = [[] for i in range(1)]
+    to_append = [[sample_request_dict] for i in range(1)]
+    to_append_other = [[sample_request_dict_other] for i in range(1)]
+    additional_requests_input = additional_requests_input + to_append + to_append_other + additional_requests_input + to_append_other + to_append
+    print(additional_requests_input)
+    completed_traces, timing_info = rm.main_loop(system, additional_requests_input)# for i in range(2)])
+    print("Finished Heuristic Test, test results below:")
+    for trace in completed_traces:
+        print("TRACE")
+        print(trace)
+    gm.reset_globals()
+
 # debug_discrepancy()
 # test_realtime()
-test_additional_requests()
+test_heuristic()
+# test_additional_requests()
 # test_additional_requests_with_tau()
 # test_additional_requests_with_empty_state_gap()
 # test_additional_requests_with_tau_single_tower()
