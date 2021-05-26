@@ -86,6 +86,8 @@ instead of
 tower 1: requests-requests-TAU-empty
 tower 2: requests-requests-TAU-empty
 
+#NOTE: so this issue is actually really affecting me ^^. Since you sometimes build TAU graphs from earlier than TAU (ex: an empty tower will be built from the initial state, regardless of TAU). This means that requests are being swapped around in time !!!
+
 is it possible that you might swap requests that have been added to states before TAU?
 it probably is. so now you need to fix this manual addition thing. I think there is definitely a better way to do it. 
 #TODO: FIX MANUAL ADDITION:
@@ -100,3 +102,15 @@ basically, you cannot only guarantee that one of the TAU state requests should b
 understand that because all requests have a minimum initial expiration of 0, that there will always be enough states to fully incur the negative penalty. at max, a request can have -TAU as its expiration. 
 
 current state: able to collect data, but I'm not sure if this data is correct. Can run small examples and see if it makes sense.
+
+one interesting behavior: towers are not willing to help other towers out with expired requests, because then it means the overall costs will go up. 
+Moreover, towers will stuff other towers with their expired requests so that only one tower incurs penalty.
+
+solution: expiration cost is now determined by sum of expiration. NOTE: this doesn't actually solve the problem. This is because the towers have no concept that sharing the requests around will actually decrease the total system cost over time. 
+
+NOTE: did you know that you are capping requests at -1 in your reworked graph?? see line 125
+
+Things for tomorrows meeting:
+    Not currently graphing "wrong tower" costs, only graphing expiration violation
+    Show them the graphs and verify that the data looks good
+    

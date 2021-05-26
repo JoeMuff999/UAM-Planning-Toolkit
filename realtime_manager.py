@@ -98,7 +98,7 @@ def main_loop(initial_system, additional_requests):
                             # for this case, lets say there is a tower that has an empty last state in the sense that it its last state
                             # is a "finish" state. this check here will build off of that state. the other case if its an empty tower, which
                             # then of course we just use the empty state.
-                            adjusted_expiration_time = request[1] - len(requested_tower) + 1
+                            adjusted_expiration_time = request[1] - len(requested_tower)
                             # print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
                             # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
                             # if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:

@@ -562,8 +562,15 @@ def generate_trace(graph, override=False, finish_label="FINISH"):
     #NOTE: manually tagging on extra cost if a request was originally intended for a different tower. 
     #trust me, this works b/c the swapping algorithm is the one who checks the costs 
     #(if you are wondering why you don't add these costs before synthesis)
-    #NOTE: FOR REALTIME PURPOSES, I AM REMOVING THE PORT COSTS!!!! 
+    #NOTE: FOR REALTIME PURPOSES, I AM MANUALLY CALCULATING EXPIRATION COSTS 
+    #THE COST IS EQUAL TO SUM OF EXPIRATION PENALTIES
+    cost._value[0] =0
+    for time in graph.max_time_per_req_vector:
+        if time < 0:
+            cost._value[0] -= time
     cost._value[1] = 0
+    #NOTE: FOR REALTIME PURPOSES, I AM REMOVING THE PORT COSTS!!!! 
+
     for req in graph.request_vector:
         if req == "wrong_tower":
             cost._value[1] += 1

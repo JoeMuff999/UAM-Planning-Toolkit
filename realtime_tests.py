@@ -121,9 +121,31 @@ def test_heuristic():
         print(trace)
     gm.reset_globals()
 
+def test_heuristic2():
+    tower0 = gm.return_tower(5, 2, [5,5,5,5,5], [3 for i in range(2)])
+    tower1 = gm.return_tower(5, 2, [0,0,0,0,0], [3 for i in range(2)])
+    system = [tower0, tower1]
+    rm.configure_realtime(tau=1)
+
+    completed_traces, timing_info = rm.main_loop(system, [])# for i in range(2)])
+    percent_valid = [0 for i in range(len(completed_traces))]
+    for index, com in enumerate(completed_traces):
+        for state in com:
+            if("VALID" in state.labels):
+                percent_valid[index] += 1
+    print(percent_valid)
+    
+    print("Finished Heuristic Test, test results below:")
+    for trace in completed_traces:
+        print("TRACE")
+        print(trace)
+    gm.reset_globals()
+
 # debug_discrepancy()
 # test_realtime()
 test_heuristic()
+
+# test_heuristic2()
 # test_additional_requests()
 # test_additional_requests_with_tau()
 # test_additional_requests_with_empty_state_gap()

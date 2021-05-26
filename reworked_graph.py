@@ -122,7 +122,7 @@ class ReworkedGraph(object):
     def generate_ignore_list(self, req_vec):
         tmp_list = []
         for i in range(len(req_vec[TIMES])):
-            if req_vec[TIMES][i] == -1:
+            if req_vec[TIMES][i] <= -1: #was previously "req_vec[TIMES][i] == -1", changed to reflect that new requests can have < -1
                 tmp_list.append(i)
         return tmp_list
 
@@ -154,15 +154,16 @@ class ReworkedGraph(object):
         for key in keys_to_iterate:
             port_dict[key] += 1
 
+    #NOTE: before, you would not allow requests with "-1" time left have their time decrease. changed for realtime
     def iterate_all_requests(self, req_vec, ignore_vec, negative_vec):
         # req_vev = tuple(list('a','b'), list(2,2)) set(requests, times)
         for i in range(len(req_vec[1])):
-            if i not in ignore_vec and i not in negative_vec:
+            if i not in ignore_vec:
                 req_vec[1][i] -= 1
-
+    #NOTE: same as above
     def undo_iteration_of_requests(self, req_vec, ignore_vec, negative_vec):
         for i in range(len(req_vec[1])):
-            if i not in ignore_vec and i not in negative_vec:
+            if i not in ignore_vec:
                 req_vec[1][i] += 1
     def __str__(self):
         return "Tower has requests :: " + str(self.request_vector) + " and times of " + str(self.max_time_per_req_vector) + " and ports of " + str(self.port_limits)
