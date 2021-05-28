@@ -1,0 +1,33 @@
+Topics:
+    Data I have collected:
+        The system cost over time 
+        Runtime analysis
+    Simulation:
+        Samples of what previous sims looked like
+        Constraints: I don't have a machine that can run Unreal
+    Deadlines:
+        I have pretty much until the end of this week if we want to get it done before the end of May. Going to be gone next week.
+fix this by taking the entire sum of the system
+
+randomized requests, per time step approval
+
+table of per time step approval runtime 
+
+box and whisker plot, scales with number of requests and number of vertihubs. 
+
+incorporate the data set
+
+to get done today:
+    runtime table
+    realtime vs static data
+
+What I actually need to get done:
+    fix the time-warping. You still have the issue that the TAU graphs exist at different points in time depending on how full their graph is. What you can do is make the TAU graphs all be at the same point in time, and then when you add the TAU to the overall trace, just adjust the requests accordingly. ISSUE is that maybe the swapping algorithm won't account for the fact that you could potentially unviolate a request if you put it in an unoccupied tower. 
+    there is also still the issue that the towers don't end up paying for requests fully. to fix this, just go through each trace, and then make the first cost equal to what it would've cost it. For example, if the request is expired
+
+Changes from today (5/27):
+    made it so that the towers were correctly accepting their requests before TAU if they were empty -> this fixed the data so that it was far more reasonable
+
+Existing issues:
+    time warping when doing the request passing heuristic. described above
+    towers not incurring the full cost of expired requests when TAU > 0. 

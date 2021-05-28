@@ -1,0 +1,116 @@
+some bug with randomness...seeding not working. solution is not deterministic for some reason
+
+apparently every label gives you some sort of cost if its unassigned? even finish or all of the number labels were giving costs
+(this is about mvp ^^^)
+and this too! is about mvp: we had to label each node with a unique id, because the same hash is equivalent under tulip terms :P
+
+in terms of data collection, for the traffic stuff, id probably want to show some percentage of invalid states as time progresses?
+just saying total cost is pretty useless in this context, so then I could say percentage invalid after trafic etc etc. i think this would be cool
+
+NOTE: realtime lables are incorrect
+
+just gonna let you know that NOTE: overflowed ports are not working. ( at least for realtime): see how some lines don't have the label
+State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, -1, -1) Port states of :: {'0': -12} Labels :: ('OVERFLOWED_PORT', '21')  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, -1, 1) Port states of :: {'0': -13} Labels :: ('22',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, -1) Port states of :: {'0': -14} Labels :: ('OVERFLOWED_PORT', '23')  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, 4) Port states of :: {'0': -15} Labels :: ('24',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, 3, 4, 3, 0, 3) Port states of :: {'0': -16} Labels :: ('25',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, 2, 3, 2, 2) Port states of :: {'0': -17} Labels :: ('OVERFLOWED_PORT', '26')  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, 1, 2, 1, 1, 4, 2) Port states of :: {'0': -18} Labels :: ('27',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (0, 1, 0, 0, 3, 1, 3) Port states of :: {'0': -19} Labels :: ('VALID', '28')  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, 2, 0, 2, 4) Port states of :: {'0': -20} Labels :: ('29',)  
+, State currently has requests :: ('no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref', 'no_pref') Time states of :: (-1, -1, -1, -1, 1, 3) Port states of :: {'0': -21} Labels :: ('OVERFLOWED_PORT', '30') 
+
+1. Best case: Know all the requests from the beginning and synthesize the trace based on the complete knowledge
+2. Tau = 0: Process the requests as they arrive but no commitment.
+3. Increase Tau
+
+the issue is that if a request is invalid after some time, then you need to make the previous states also invalid. 
+
+solution: i add the requests to the 0 through tau states manually. this is fine because they cannot be modified anyways. potential error with the fact that we copy over the previous states, also maybe an error with the fact that zero request towers exist (:P). for now, it seems to be decently correct, and doesn't go against most logic (except that this is possible):
+Tau = 0 -> 9, see how the higher taus sometimes bounce between negative values (this is clearly not possible, or shouldn't be possible, but here we are)
+-30
+-37
+-49
+-51
+-53
+-53
+-52
+-51
+-52
+-51
+
+
+record computation time
+construct the hand case for when yuou can do the global cost from start to finish
+show concentrated traffic per tower
+
+compare against first come first serve strategy in over the same distribution. 
+
+make the high traffic as one big block, could also change the density of how they come in
+
+try to hook it up with the minimizing passing rounds stuff ahh...
+
+considerations:
+    -passing penalty
+    -passing them in the first place, you can only pass between graphs themselves...
+    -passing needs to be done between all towers with modifiable TAU+ states, not just those who have additional requests for a time step
+
+
+could just pass between all of the TAU+ graphs
+
+first, we initialize a list of size num_towers to None, call it TAU_graphs
+then, if we have additional requests, we set the TAU_graphs[tower] to be equal to the TAU graph for that tower
+    conditions: if TAU_graphs[tower] == None and tau_graph is empty, then don't do anything
+    else, replace the existing TAU_graph with the new TAU_graph
+once this has been done for all incoming requests, we run the heuristic on TAU_graphs
+with these modified graphs, we thn proceed with the tau trace stuff as normal.
+
+
+#NOTE: You WILL need to change the manual addition of the requests to the pre-TAU states. when you say enumerate(request_dict[requested_tower_index]), you will need to change this to account for the request swapping. now, you could just directly take it from the root of the TAU_graph, BUT this could include requests that were already present. THE MOST CURRENT ISSUE CURRENTLY :P
+
+another consideration: if a tower doesn't have an incoming request, you will be dealing with outdated information. this is NOT true.
+because they are technically future planned, they already have "time delay" factored in. 
+
+another consideration: if you are passing to a tower that doesn't have more than TAU states, then the TAU+ graph will just be an empty graph. This means there exists a more optimal solution to accept the request in the time before TAU.
+
+ex:
+tower 1: requests-empty-TAU-empty
+tower 2: requests-requests-TAU-requests
+
+tower 1 will accept the requests from tower 2 as such:
+tower 1: requests-empty-TAU-requests
+tower 2: requests-requests-TAU-empty
+
+instead of 
+tower 1: requests-requests-TAU-empty
+tower 2: requests-requests-TAU-empty
+
+#NOTE: so this issue is actually really affecting me ^^. Since you sometimes build TAU graphs from earlier than TAU (ex: an empty tower will be built from the initial state, regardless of TAU). This means that requests are being swapped around in time !!!
+
+is it possible that you might swap requests that have been added to states before TAU?
+it probably is. so now you need to fix this manual addition thing. I think there is definitely a better way to do it. 
+#TODO: FIX MANUAL ADDITION:
+two issues currently:
+    how to get the actual new requests after swapping
+    when swapping, manually added requests could actually become incorrect if that request is swapped away. a tower would incur an expiration penatly for a request that no longer belongs to it 
+
+a nice solution would be to only occur the maximum penatly of a request, but currently there is no connection between requests, even if they are technically the same. 
+
+basically, you cannot only guarantee that one of the TAU state requests should be in the previous states. This guaranteed state is the one that is actually going to be accepted during the TAU time step. All of the others could potentially be switched out. SO, what we can do is only incur a penalty for the request which is going to be accepted. We can do a pretty simple algorithm to figure out which one it is, but this is a bit hacky. The advantage of this method is that it guarantees you will only incur penalty for requests which will actually be accepted. I don't like this fix as I believe there must be some bugs with it
+
+understand that because all requests have a minimum initial expiration of 0, that there will always be enough states to fully incur the negative penalty. at max, a request can have -TAU as its expiration. 
+
+current state: able to collect data, but I'm not sure if this data is correct. Can run small examples and see if it makes sense.
+
+one interesting behavior: towers are not willing to help other towers out with expired requests, because then it means the overall costs will go up. 
+Moreover, towers will stuff other towers with their expired requests so that only one tower incurs penalty.
+
+solution: expiration cost is now determined by sum of expiration. NOTE: this doesn't actually solve the problem. This is because the towers have no concept that sharing the requests around will actually decrease the total system cost over time. 
+
+NOTE: did you know that you are capping requests at -1 in your reworked graph?? see line 125
+
+Things for tomorrows meeting:
+    Not currently graphing "wrong tower" costs, only graphing expiration violation
+    Show them the graphs and verify that the data looks good
+    

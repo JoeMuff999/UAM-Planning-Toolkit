@@ -310,7 +310,7 @@ def do_round(system, round_index, rollout_index):
         print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
         if accepting_tower_index != -1: #found a tower that will accept the request
             system[accepting_tower_index] = add_req_to_tower(system[accepting_tower_index], published_request_time)
-            assert(published_request_index <= system_req_vector_size_per_tower[publishing_tower_index]-1) # ensure that the removed request was originally a part of this tower
+            # assert(published_request_index <= system_req_vector_size_per_tower[publishing_tower_index]-1) # ensure that the removed request was originally a part of this tower
             system[publishing_tower_index] = del_req_from_tower(system[publishing_tower_index], published_request_index)
             system_req_vector_size_per_tower[publishing_tower_index]-=1
             return system, False, cost_vec
@@ -565,9 +565,13 @@ def generate_trace(graph, override=False, finish_label="FINISH"):
     #NOTE: FOR REALTIME PURPOSES, I AM MANUALLY CALCULATING EXPIRATION COSTS 
     #THE COST IS EQUAL TO SUM OF EXPIRATION PENALTIES
     cost._value[0] =0
-    for time in graph.max_time_per_req_vector:
-        if time < 0:
-            cost._value[0] -= time
+    
+    for state in state_path:
+        # print (state)
+        for time in state.time_vector:
+            if time < 0:
+                cost._value[0] -= time
+    # print(cost._value[0])
     cost._value[1] = 0
     #NOTE: FOR REALTIME PURPOSES, I AM REMOVING THE PORT COSTS!!!! 
 

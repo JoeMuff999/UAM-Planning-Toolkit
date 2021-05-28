@@ -16,7 +16,7 @@ TIMES = 1
 
 NO_PREF = "no_pref"
 WRONG_TOWER = "wrong_tower"
-#TODO :: fix bug that overflowed gets counted more than once -> believe this is already done, just be aware of this possible source of error.
+#TODO:: fix bug that overflowed gets counted more than once -> believe this is already done, just be aware of this possible source of error.
 
 class ReworkedGraph(object):
     def __init__(self, requests_per_port_per_step={}, max_accepted_requests=0, request_vector=[],

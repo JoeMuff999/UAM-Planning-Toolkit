@@ -107,7 +107,7 @@ def test_heuristic():
     sample_request_dict = {0: [(sample_request), (sample_request)]} # tower index maps to a list of (port_name, expiration_time) tuples.
     sample_request_dict_other = {1: [(sample_request), (sample_request)]} # tower index maps to a list of (port_name, expiration_time) tuples.
 
-    rm.configure_realtime(tau=0)
+    rm.configure_realtime(tau=1)
     
     additional_requests_input = [[] for i in range(1)]
     to_append = [[sample_request_dict] for i in range(1)]
@@ -120,12 +120,15 @@ def test_heuristic():
         print("TRACE")
         print(trace)
     gm.reset_globals()
-
+'''
+Should show that the heuristic will balance the requests, s.t. tower0 takes half of tower2's requests
+'''
 def test_heuristic2():
-    tower0 = gm.return_tower(5, 2, [5,5,5,5,5], [3 for i in range(2)])
-    tower1 = gm.return_tower(5, 2, [0,0,0,0,0], [3 for i in range(2)])
+    tower0 = gm.return_tower(4, 2, [5,5,5,5], [3 for i in range(2)])
+    tower1 = gm.return_tower(4, 2, [0,0,0,0], [3 for i in range(2)])
     system = [tower0, tower1]
     rm.configure_realtime(tau=1)
+    gm.run_minimizing_mvp(system)
 
     completed_traces, timing_info = rm.main_loop(system, [])# for i in range(2)])
     percent_valid = [0 for i in range(len(completed_traces))]

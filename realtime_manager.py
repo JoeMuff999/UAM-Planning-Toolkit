@@ -98,7 +98,12 @@ def main_loop(initial_system, additional_requests):
                             # for this case, lets say there is a tower that has an empty last state in the sense that it its last state
                             # is a "finish" state. this check here will build off of that state. the other case if its an empty tower, which
                             # then of course we just use the empty state.
-                            adjusted_expiration_time = request[1] - len(requested_tower)
+                            #NOTE: The +1 is because the requested_tower will always have an empty state, which means that the len(requested_tower) will always be at least one, even if its empty
+                            if TAU == 0:
+                                adjusted_expiration_time = request[1] - len(requested_tower)
+                            else:
+                                adjusted_expiration_time = request[1] - len(requested_tower) +1
+
                             # print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
                             # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
                             # if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
@@ -127,7 +132,10 @@ def main_loop(initial_system, additional_requests):
                 # NOTE: mvp happens here
                 requested_tower = minimized_traces[requested_tower_index]
                 TAU_trace = gm.generate_trace(TAU_graphs[requested_tower_index], override=True)[1]
-                minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
+                if len(requested_tower) > TAU:
+                    minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
+                else:
+                    minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
 
             #TODO: at the moment, one clear issue is that the expiration bug still exists.
 
@@ -203,7 +211,7 @@ def main_loop(initial_system, additional_requests):
         timing_info.append(time_per_time_step)
 
         TIME_STEP += 1
-        # print("completed traces = " + str(completed_traces))
+        print("completed traces = " + str(completed_traces) + "  time_step = " + str(TIME_STEP))
 
     for trace in minimized_traces:
         assert(len(trace) == 0)

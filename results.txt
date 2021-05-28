@@ -1,1 +1,0 @@
-system_index,heuristic_index,num_towers,minimized_cost_level_1,minimized_cost_level_0,synthesis_time,num_roundssystem_index,heuristic_index,num_towers,minimized_cost_level_1,minimized_cost_level_0,synthesis_time,num_rounds
