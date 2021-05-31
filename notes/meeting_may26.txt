@@ -31,3 +31,30 @@ Changes from today (5/27):
 Existing issues:
     time warping when doing the request passing heuristic. described above
     towers not incurring the full cost of expired requests when TAU > 0. 
+    Towers sometimes pay for requests that have been swapped away (I believe this is a possibility), actually, someone has to pay this cost. so this may not be an issue
+
+algorithm:
+    current_traces <- list per tower
+    final_traces <- list per tower
+    while there are still existing requests 
+        if there are requests for this time step
+            TAU_graphs <- list
+            for each tower:
+                TAU_state <- the first empty state i, or the state at TAU
+                time_adjustment <- time step at i or TAU
+                for each incoming_request = (requested_port, time_remaining):
+                    incoming_request.time_remaining -= time_adjustment
+                    TAU_state.append(incoming_request) 
+                TAU_graph <- construct a graph with the TAU_state as the initial
+                TAU_graphs.append(TAU_graph)
+            swapping_heuristic(TAU_graphs)      
+            for each tower:
+                current_traces[tower] <- current_traces[tower] (from current time step to i or TAU) + TAU_graph
+                final_traces[tower].append(current_traces[tower][0])
+                del current_traces[tower][0]
+
+swapping heuristic:
+    
+            
+        
+

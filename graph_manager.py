@@ -170,7 +170,7 @@ def run_minimizing_mvp(system, rollout_index=0):
     trace_per_tower = None
     while not violation_minimized:
         for tower in system:  #debugging
-            print(str(tower))
+            # print(str(tower))
             system_req_vector_size_per_tower.append(len(tower.request_vector))
         time_start = time.perf_counter()
         system_timings.append([])
@@ -180,31 +180,31 @@ def run_minimizing_mvp(system, rollout_index=0):
         cost_vec_per_round.append(minimized_cost_vec)
         time_end = time.perf_counter()
         total_time += time_end - time_start
-        print("\n new round - completed in time " + str(time_end - time_start))
-        print("\tround " + str(num_rounds) + " breakdown :: ") #(tower number) | (time to find most expensive request in tower) | (time to synthesize with published request)")
-        for tower_index in range(len(system_timings[0])):
-            if system_timings[num_rounds][tower_index][1] == 0:
-                print("\t tower " + str(tower_index) + " took " + str(system_timings[num_rounds][tower_index][0]) + " to find most expensive request and took " + str(system_timings[num_rounds][tower_index][1]) + " to synthesize with published request <--- publishing tower")
-            else:
-                print("\t tower " + str(tower_index) + " took " + str(system_timings[num_rounds][tower_index][0]) + " to find most expensive request and took " + str(system_timings[num_rounds][tower_index][1]) + " to synthesize with published request")
-        print("")
+        # print("\n new round - completed in time " + str(time_end - time_start))
+        # print("\tround " + str(num_rounds) + " breakdown :: ") #(tower number) | (time to find most expensive request in tower) | (time to synthesize with published request)")
+        # for tower_index in range(len(system_timings[0])):
+        #     if system_timings[num_rounds][tower_index][1] == 0:
+        #         print("\t tower " + str(tower_index) + " took " + str(system_timings[num_rounds][tower_index][0]) + " to find most expensive request and took " + str(system_timings[num_rounds][tower_index][1]) + " to synthesize with published request <--- publishing tower")
+        #     else:
+        #         print("\t tower " + str(tower_index) + " took " + str(system_timings[num_rounds][tower_index][0]) + " to find most expensive request and took " + str(system_timings[num_rounds][tower_index][1]) + " to synthesize with published request")
+        # print("")
         num_rounds += 1
 
 
     assert(minimized_cost_vec is not None)
 
-    print("violation minimized")
-    print("round breakdown average")
+    # print("violation minimized")
+    # print("round breakdown average")
     cumulative_ERFind_time = [0 for i in range(len(system_timings[0]))]
     cumulative_PRTest_time = [0 for i in range(len(system_timings[0]))]
     for round_index in range(len(system_timings)):
         for tower_index in range(len(system_timings[0])):
             cumulative_ERFind_time[tower_index] += system_timings[round_index][tower_index][0]
             cumulative_PRTest_time[tower_index] += system_timings[round_index][tower_index][1]
-    for tower_index in range(len(system_timings[0])):
-        print("tower " + str(tower_index) + " expensive request cumulative : " + str(cumulative_ERFind_time[tower_index]) + " ,published request synthesis cumulative : " + str(cumulative_PRTest_time[tower_index]))
+    # for tower_index in range(len(system_timings[0])):
+    #     print("tower " + str(tower_index) + " expensive request cumulative : " + str(cumulative_ERFind_time[tower_index]) + " ,published request synthesis cumulative : " + str(cumulative_PRTest_time[tower_index]))
 
-    print("end of system\n---")
+    # print("end of system\n---")
 
 
     return total_time, num_rounds, minimized_cost_vec, system_timings, cost_vec_per_round
@@ -236,7 +236,7 @@ def do_round(system, round_index, rollout_index):
         time_end = time.perf_counter()
         system_timings[round_index][index].append(time_end-time_start)
         tower_cost_list.append(full_tower_cost)
-        print("Tower's current cost = " + str(full_tower_cost))
+        # print("Tower's current cost = " + str(full_tower_cost))
         worst_request_indices_list.append(curr_request_index)
         accompanying_step_list.append(curr_time)
 
@@ -245,8 +245,8 @@ def do_round(system, round_index, rollout_index):
         publishing_tower_index_list.append(index) #used to keep track of what tower each index is aligned to
 
     cost_vec = copy.deepcopy(tower_cost_list) #copy to return so that we can have the data on the final costs
-    for i in worst_cost_list: #debugging
-        print_formatted_cost(i)
+    # for i in worst_cost_list: #debugging
+    #     print_formatted_cost(i)
     for index in range(len(system)): #prep system timing list
         system_timings[round_index][index].append(0)
 
@@ -305,9 +305,9 @@ def do_round(system, round_index, rollout_index):
                     accepting_system = save_system
                 # else: # only need trace if the system is minimized, therefore we can safely save "trace" because it is the trace without the published request (and thus is the original state)
                 #     trace_per_tower[index] = trace
-        print("accepting tower index " + str(accepting_tower_index))
-        print("lowest_new_cost " + str(min_new_cost))
-        print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
+        # print("accepting tower index " + str(accepting_tower_index))
+        # print("lowest_new_cost " + str(min_new_cost))
+        # print("cost of accepting request list :: " + str(cost_of_accepting_request_list))
         if accepting_tower_index != -1: #found a tower that will accept the request
             system[accepting_tower_index] = add_req_to_tower(system[accepting_tower_index], published_request_time)
             # assert(published_request_index <= system_req_vector_size_per_tower[publishing_tower_index]-1) # ensure that the removed request was originally a part of this tower

@@ -80,11 +80,11 @@ def main_loop(initial_system, additional_requests):
                     # fill_with_empty_states(requested_tower) 
                     TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
                 if additional_requests[TIME_STEP][0].get(requested_tower_index,None) != None:            
-                    print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
+                    # print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
                     # make a separate method for this code
                     if was_big_enough:
                         for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
-                            print (additional_requests[TIME_STEP][0][requested_tower_index])
+                            # print (additional_requests[TIME_STEP][0][requested_tower_index])
                             requested_port = request[0]
                             adjusted_expiration_time = request[1] - TAU 
                             TAU_state.request_vector = list(TAU_state.request_vector)
@@ -174,7 +174,7 @@ def main_loop(initial_system, additional_requests):
                     #             state.labels = state.generate_labels()
                     #     minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
 
-                print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
+                # print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
             # current_num_requests = 0
             # for trace in minimized_traces:
             #     if(len(trace) > 0):
@@ -211,8 +211,8 @@ def main_loop(initial_system, additional_requests):
         timing_info.append(time_per_time_step)
 
         TIME_STEP += 1
-        print("completed traces = " + str(completed_traces) + "  time_step = " + str(TIME_STEP))
-
+        # print("completed traces = " + str(completed_traces) + "  time_step = " + str(TIME_STEP))
+    
     for trace in minimized_traces:
         assert(len(trace) == 0)
 
