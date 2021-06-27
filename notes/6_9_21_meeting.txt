@@ -1,0 +1,25 @@
+Cluster towers bring it down to about 20 or so of them.
+
+
+k-means clustering (spatially clustered), some tradeoff between spatial and request density 
+
+
+play with different time steps. 15 minutes seems reasonable
+
+
+suda will send you a data set to run with a jupyter notebook
+
+have some sort of spatial constraint latitude and longitude based, just find the distance between two towers and increase the cost between them 
+
+
+battery, congestion, and FAA constraints (can't just hover). this is why we do the redirecting algorithm. consider that its not just people, and includes cargo and other such things. 
+
+suda will send the CSV file with the coordinates, and you will process this spatially. 
+
+make some concrete distributed computing simulation, potentially a networked simulation
+
+dont fixate on flocking, learn something that I haven't been exposed to. cloud computing. 
+
+multi-agent RL stuff, or maybe distributed computing : things to bring up with Natasha. 
+
+objective is to learn something, not just produce something. 

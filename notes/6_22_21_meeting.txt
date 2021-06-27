@@ -1,0 +1,29 @@
+i got my masters!
+
+cool things: very happy I went, was a great time meeting all of the other schools and just being surrounded by people who love motorsports
+
+for this week:
+I want to formalize the problem
+
+
+submit the forms to the box!
+
+see if you can generate that data set using the repository that they have given us. ask suda for the respository 
+
+data set will help us understand if the straws are useful 
+dallas and chicago data
+chicago is the excel spreadsheet, code takes in the spreadsheet and turns it into origin/destination pair and time of arrival
+
+
+reach out to apoorv if you need any help, always remember to copy natasha and michael patterson onto the email
+
+maybe talk to suda to step through what he did to get this data up and running. 
+
+once i have the data up and running, then I can validate distributed consensus protocol. 
+
+parameters, results (inputs and outputs), any assumptions I am making. 
+build off of the papers that you have
+
+meet wednesday afternoon, 2 central 
+
+nifs internship recordings!

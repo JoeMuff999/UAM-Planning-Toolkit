@@ -1,0 +1,25 @@
+Continuing to think about the metro lines problem
+
+one question: say we only have one straw, does this mean that there can only be one effective start and end point for this region? 
+also, is the problem that we are taking multiple sectors and then finding the best number of straws in total? (based on FAA limitations and such)
+
+balance between off-straw time and minimizing landing time. 
+
+distributed consensus, convergence and closure, converging towards the straw,
+move to another sector, converge with the new set of agents in the presence of cliques. can we agree on a common direction, alignment rules? flocking together getting into the straw
+
+incentivize being in a large group, inverse potential law, if they're centroids are approaching they snap together.
+
+lowest number of disparate cliques
+
+neighborhoods? assuming global communication? pretend that the links go down (fault tolerant), 
+
+will be allowed to fail! 
+
+data to validate with: double-dipping in the data. direct link to the people who did the data generation, get in contact with the student who did the coding and developing fo the data. copy her, michale patterson, dan dilertentes. 
+
+so then we have a metric that tries to limit the number of existing cliques
+
+project plan and forms, send them to natasha
+
+go to the networking events
