@@ -1,0 +1,13 @@
+So if we do the vertihub vertiport model, then we run into some issues.
+
+first, if we say landing happens within a vertihub's control, then we will have to pass the vehicle to another vertihub to reach its desired destination
+
+
+in terms of flight times, since our requests are spatially based, just assign them a value in the range of 0 to MAX_flight_time, which is normalized based on the max distance. (ie: max distance gets MAX_flight_time, everyone else is some percentage of that).
+
+so basically, im not sure what we are doing lol.
+
+meeting: we meet friday
+
+investigate how much time the arrivals will be, basically just see how distributed its gonna be 
+
