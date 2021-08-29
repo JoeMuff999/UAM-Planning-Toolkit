@@ -10,4 +10,6 @@ so basically, im not sure what we are doing lol.
 meeting: we meet friday
 
 investigate how much time the arrivals will be, basically just see how distributed its gonna be 
+so the way you can do this is to measure how far apart the requests are for each tower.
+calculate how long they will take to arrive at their destination, and then for each tower analyze how many flights are arriving per interval
 
