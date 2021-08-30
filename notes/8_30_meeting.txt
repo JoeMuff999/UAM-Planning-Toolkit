@@ -1,2 +1,3 @@
-Findings:
-    so, port to port, there is a max of potentially 98 trips
+What to discuss:
+    findings about request density - what are we actually concerned about and steps to reduce concerns
+    how to handle landing times? TTL
