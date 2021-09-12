@@ -56,6 +56,7 @@ def main_loop(initial_system, additional_requests):
     completed_traces = [[] for i in range(len(minimized_traces))]
     sum_of_requests = 0
     TAU_graphs = [None for i in minimized_traces]
+    #TODO: make it so that a vertihub does not have more than 8 requests inside of it at any point
     while not are_traces_empty(minimized_traces) or TIME_STEP < len(additional_requests): 
         start_time = time.perf_counter()   
         if TIME_STEP < len(additional_requests) and additional_requests[TIME_STEP] != []: # if there is an incoming request at this time step
@@ -79,8 +80,9 @@ def main_loop(initial_system, additional_requests):
                 else:
                     # fill_with_empty_states(requested_tower) 
                     TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
+                
                 if additional_requests[TIME_STEP][0].get(requested_tower_index,None) != None:            
-                    # print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
+                    print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
                     # make a separate method for this code
                     if was_big_enough:
                         for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
@@ -174,7 +176,7 @@ def main_loop(initial_system, additional_requests):
                     #             state.labels = state.generate_labels()
                     #     minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
 
-                # print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
+                print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
             # current_num_requests = 0
             # for trace in minimized_traces:
             #     if(len(trace) > 0):
@@ -261,7 +263,7 @@ def record_completed_state(minimized_traces, completed_traces):
         if len(trace) == 0: # ie: no more states, is empty system/goal state
             completed_traces[index].append(copy.deepcopy(DEFAULT_EMPTY_STATE))
         else:
-            # print("recorded state " + str(minimized_traces[index][0]) + " for tower " + str(index))
+            print("recorded state " + str(minimized_traces[index][0]) + " for tower " + str(index))
             completed_traces[index].append(minimized_traces[index][0])
             del minimized_traces[index][0]
 

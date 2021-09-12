@@ -1,3 +1,11 @@
 What to discuss:
     findings about request density - what are we actually concerned about and steps to reduce concerns
     how to handle landing times? TTL
+
+ttl is random
+
+so...
+some things I still need to fix:
+    ports are not working properly
+    limiting the number of requests per vertihub is also done crudely
+    prints are not working? - make it so that prints don't happen unless they are not empty
