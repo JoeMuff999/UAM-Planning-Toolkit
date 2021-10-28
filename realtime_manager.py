@@ -38,7 +38,7 @@ To note:
     -default state is overriden in configuration
 
 """
-def main_loop(initial_system, additional_requests):
+def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdue_Data_Output = None): #the MAX_ALLOWED_REQUESTS will cause problems for your non-purdue data set stuff, but we can cross that bridge later
     assert(configured) # force user to configure globals before running
     
     
@@ -56,11 +56,14 @@ def main_loop(initial_system, additional_requests):
     completed_traces = [[] for i in range(len(minimized_traces))]
     sum_of_requests = 0
     TAU_graphs = [None for i in minimized_traces]
+    additional_requests_culled = copy.deepcopy(additional_requests)
     #TODO: make it so that a vertihub does not have more than 8 requests inside of it at any point
     while not are_traces_empty(minimized_traces) or TIME_STEP < len(additional_requests): 
         start_time = time.perf_counter()   
-        if TIME_STEP < len(additional_requests) and additional_requests[TIME_STEP] != []: # if there is an incoming request at this time step
-            # print('additional requests = ' + str(additional_requests[TIME_STEP]))
+        # NOTE: the "[{}]" check is needed because the purdue data input has a dictionary even if there are no additional requests
+        if TIME_STEP < len(additional_requests) and additional_requests[TIME_STEP] != [] and additional_requests[TIME_STEP] != [{}]: # if there is an incoming request at this time step
+            print('Current time step : ' + str(TIME_STEP) + '/' + str(len(additional_requests)))
+            print('additional requests = ' + str(additional_requests[TIME_STEP]))
             #add to the preferred tower at the TAU state. 
             # print(additional_requests[TIME_STEP])
             assert(len(additional_requests[TIME_STEP]) <= 1)
@@ -81,8 +84,8 @@ def main_loop(initial_system, additional_requests):
                     # fill_with_empty_states(requested_tower) 
                     TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
                 
-                if additional_requests[TIME_STEP][0].get(requested_tower_index,None) != None:            
-                    print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
+                if additional_requests[TIME_STEP][0].get(requested_tower_index,None) != None:   # the None is what get will return if it does not find the first parameter in its list of keys (requested_tower_index)         
+                    # print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
                     # make a separate method for this code
                     if was_big_enough:
                         for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
@@ -91,8 +94,16 @@ def main_loop(initial_system, additional_requests):
                             adjusted_expiration_time = request[1] - TAU 
                             TAU_state.request_vector = list(TAU_state.request_vector)
                             TAU_state.time_vector = list(TAU_state.time_vector)
-                            TAU_state.request_vector.append(requested_port)
-                            TAU_state.time_vector.append(adjusted_expiration_time) 
+                            #NOTE: This is where we cap the number of requests in a tower state
+                            if len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS:
+                                TAU_state.request_vector.append(requested_port)
+                                TAU_state.time_vector.append(adjusted_expiration_time)
+                                Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
+
+                            else:
+                                additional_requests_culled[TIME_STEP][0][requested_tower_index].remove(request) # NOTE: an issue here is that two requests may be the exact same (same port, same expiration), so if we had requests = [(0,0), (1,1), (0,0)], and we were rejecting number 3, this would actually make the list [(1,1), (0,0)] instead of [(0,0), (1,1)]. This could definitely have an effect, although I'm not sure how serious the impact will be
+                                Purdue_Data_Output.num_denied_requests += 1
+                                print("DENIED REQUEST") 
                     else:
                         for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
                             requested_port = request[0]
@@ -113,8 +124,16 @@ def main_loop(initial_system, additional_requests):
                                 # adjusted_expiration_time = request[1] - len(requested_tower) + 2 #NOTE: figure out what this "+2" was for...
                             TAU_state.request_vector = list(TAU_state.request_vector)
                             TAU_state.time_vector = list(TAU_state.time_vector)
-                            TAU_state.request_vector.append(requested_port)
-                            TAU_state.time_vector.append(adjusted_expiration_time) 
+                            #NOTE: This is where we cap the number of requests in a tower state
+                            if len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS:
+                                TAU_state.request_vector.append(requested_port)
+                                TAU_state.time_vector.append(adjusted_expiration_time)
+                                Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
+                            else:
+                                Purdue_Data_Output.num_denied_requests += 1
+
+                                additional_requests_culled[TIME_STEP][0][requested_tower_index].remove(request)
+                                print("DENIED REQUEST")
                 
                 # so if we add to the first empty state, then we need to pad it with empty states.
                 # yes, for record keeping. if there isn't and additional request, our tower will have no states!
@@ -176,7 +195,7 @@ def main_loop(initial_system, additional_requests):
                     #             state.labels = state.generate_labels()
                     #     minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
 
-                print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
+                # print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
             # current_num_requests = 0
             # for trace in minimized_traces:
             #     if(len(trace) > 0):
@@ -218,7 +237,7 @@ def main_loop(initial_system, additional_requests):
     for trace in minimized_traces:
         assert(len(trace) == 0)
 
-    
+    Purdue_Data_Output.additional_requests_culled = additional_requests_culled
     return completed_traces, timing_info
     # for index in range(len(minimized_traces)):
     #     for state_index, state in enumerate(minimized_traces[index]):
@@ -263,7 +282,7 @@ def record_completed_state(minimized_traces, completed_traces):
         if len(trace) == 0: # ie: no more states, is empty system/goal state
             completed_traces[index].append(copy.deepcopy(DEFAULT_EMPTY_STATE))
         else:
-            print("recorded state " + str(minimized_traces[index][0]) + " for tower " + str(index))
+            # print("recorded state " + str(minimized_traces[index][0]) + " for tower " + str(index))
             completed_traces[index].append(minimized_traces[index][0])
             del minimized_traces[index][0]
 

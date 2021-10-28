@@ -1,0 +1,2 @@
+start with the higher tau, get the set of requests that were actually used,
+then run that on the lower taus so that its fair?
