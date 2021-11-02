@@ -98,11 +98,13 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
                             if len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS:
                                 TAU_state.request_vector.append(requested_port)
                                 TAU_state.time_vector.append(adjusted_expiration_time)
-                                Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
+                                if Purdue_Data_Output != None:
+                                    Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
 
                             else:
                                 additional_requests_culled[TIME_STEP][0][requested_tower_index].remove(request) # NOTE: an issue here is that two requests may be the exact same (same port, same expiration), so if we had requests = [(0,0), (1,1), (0,0)], and we were rejecting number 3, this would actually make the list [(1,1), (0,0)] instead of [(0,0), (1,1)]. This could definitely have an effect, although I'm not sure how serious the impact will be
-                                Purdue_Data_Output.num_denied_requests += 1
+                                if Purdue_Data_Output != None:
+                                    Purdue_Data_Output.num_denied_requests += 1
                                 print("DENIED REQUEST") 
                     else:
                         for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
@@ -128,9 +130,11 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
                             if len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS:
                                 TAU_state.request_vector.append(requested_port)
                                 TAU_state.time_vector.append(adjusted_expiration_time)
-                                Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
+                                if Purdue_Data_Output != None:
+                                    Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
                             else:
-                                Purdue_Data_Output.num_denied_requests += 1
+                                if Purdue_Data_Output != None:
+                                    Purdue_Data_Output.num_denied_requests += 1
 
                                 additional_requests_culled[TIME_STEP][0][requested_tower_index].remove(request)
                                 print("DENIED REQUEST")
@@ -236,8 +240,9 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
     
     for trace in minimized_traces:
         assert(len(trace) == 0)
-
-    Purdue_Data_Output.additional_requests_culled = additional_requests_culled
+        
+    if Purdue_Data_Output != None:
+        Purdue_Data_Output.additional_requests_culled = additional_requests_culled
     return completed_traces, timing_info
     # for index in range(len(minimized_traces)):
     #     for state_index, state in enumerate(minimized_traces[index]):
