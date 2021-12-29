@@ -2,6 +2,7 @@ import graph_manager as gm
 import reworked_graph as rg
 import copy
 import time
+from queue import Queue
 
 TAU = 0
 TIME_STEP = 0
@@ -57,90 +58,45 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
     sum_of_requests = 0
     TAU_graphs = [None for i in minimized_traces]
     additional_requests_culled = copy.deepcopy(additional_requests)
+    request_queues = [Queue() for i in minimized_traces] # request queue for each vertihub
     #TODO: make it so that a vertihub does not have more than 8 requests inside of it at any point
     while not are_traces_empty(minimized_traces) or TIME_STEP < len(additional_requests): 
         start_time = time.perf_counter()   
+        
         # NOTE: the "[{}]" check is needed because the purdue data input has a dictionary even if there are no additional requests
         if TIME_STEP < len(additional_requests) and additional_requests[TIME_STEP] != [] and additional_requests[TIME_STEP] != [{}]: # if there is an incoming request at this time step
+            # interesting quirk NOTE: with this version of the queue, there will be expired requests in the queue that our vertihub will not have to pay for! isn't that fun?
+            # section for adding requests to their vertihubs queues
+            current_additional_requests = additional_requests[TIME_STEP][0]
+            for vertihub_idx in current_additional_requests:
+                for req in current_additional_requests[vertihub_idx]:
+                    request_queues[vertihub_idx].put((req, TIME_STEP)) # ((port, ttl), current_time_step) aka (req, time step when added to queue)
+                    #when we put them on the queue, we include the current time step and then when they are popped off the queue, the expiration time = TTL - (TIME_STEP - queue_time)
+
+        if not request_queues_empty(request_queues):
             print('Current time step : ' + str(TIME_STEP) + '/' + str(len(additional_requests)))
             print('additional requests = ' + str(additional_requests[TIME_STEP]))
-            #add to the preferred tower at the TAU state. 
-            # print(additional_requests[TIME_STEP])
-            assert(len(additional_requests[TIME_STEP]) <= 1)
-            #NOTE: this will likely only ever iterate once, but thats okay. just don't confuse yourself
-            #there is only ONE request_dict per additional_requests[TIME_STEP]
-            # iterate over all of the towers
-            for requested_tower_index in range(len(TAU_graphs)):
-                requested_tower = minimized_traces[requested_tower_index]
-
-                # check if requested tower has an existing TAU state, else its an empty state
-                was_big_enough = False
-                TAU_state = None
-                if len(requested_tower) > TAU:
-                    TAU_state = copy.deepcopy(requested_tower[TAU]) 
-                    TAU_state.labels = TAU_state.generate_labels()
-                    was_big_enough = True
+            for vertihub_idx in range(len(TAU_graphs)):
+                requested_vertihub = minimized_traces[vertihub_idx]
+                # select TAU state (e.g. state where incoming requests will go for the vertihub)
+                if len(requested_vertihub) > 0:
+                    TAU_state = requested_vertihub[0]
                 else:
-                    # fill_with_empty_states(requested_tower) 
                     TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
                 
-                if additional_requests[TIME_STEP][0].get(requested_tower_index,None) != None:   # the None is what get will return if it does not find the first parameter in its list of keys (requested_tower_index)         
-                    # print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
-                    # make a separate method for this code
-                    if was_big_enough:
-                        for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
-                            # print (additional_requests[TIME_STEP][0][requested_tower_index])
-                            requested_port = request[0]
-                            adjusted_expiration_time = request[1] - TAU 
-                            TAU_state.request_vector = list(TAU_state.request_vector)
-                            TAU_state.time_vector = list(TAU_state.time_vector)
-                            #NOTE: This is where we cap the number of requests in a tower state
-                            if len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS:
-                                TAU_state.request_vector.append(requested_port)
-                                TAU_state.time_vector.append(adjusted_expiration_time)
-                                if Purdue_Data_Output != None:
-                                    Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
-
-                            else:
-                                additional_requests_culled[TIME_STEP][0][requested_tower_index].remove(request) # NOTE: an issue here is that two requests may be the exact same (same port, same expiration), so if we had requests = [(0,0), (1,1), (0,0)], and we were rejecting number 3, this would actually make the list [(1,1), (0,0)] instead of [(0,0), (1,1)]. This could definitely have an effect, although I'm not sure how serious the impact will be
-                                if Purdue_Data_Output != None:
-                                    Purdue_Data_Output.num_denied_requests += 1
-                                print("DENIED REQUEST") 
-                    else:
-                        for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
-                            requested_port = request[0]
-                            # add the requests to the first empty state 
-                            # for this case, lets say there is a tower that has an empty last state in the sense that it its last state
-                            # is a "finish" state. this check here will build off of that state. the other case if its an empty tower, which
-                            # then of course we just use the empty state.
-                            #NOTE: The +1 is because the requested_tower will always have an empty state, which means that the len(requested_tower) will always be at least one, even if its empty
-                            if TAU == 0:
-                                adjusted_expiration_time = request[1] - len(requested_tower)
-                            else:
-                                adjusted_expiration_time = request[1] - len(requested_tower) +1
-
-                            # print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
-                            # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
-                            # if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
-                            #     TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
-                                # adjusted_expiration_time = request[1] - len(requested_tower) + 2 #NOTE: figure out what this "+2" was for...
-                            TAU_state.request_vector = list(TAU_state.request_vector)
-                            TAU_state.time_vector = list(TAU_state.time_vector)
-                            #NOTE: This is where we cap the number of requests in a tower state
-                            if len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS:
-                                TAU_state.request_vector.append(requested_port)
-                                TAU_state.time_vector.append(adjusted_expiration_time)
-                                if Purdue_Data_Output != None:
-                                    Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
-                            else:
-                                if Purdue_Data_Output != None:
-                                    Purdue_Data_Output.num_denied_requests += 1
-
-                                additional_requests_culled[TIME_STEP][0][requested_tower_index].remove(request)
-                                print("DENIED REQUEST")
+                TAU_state.request_vector = list(TAU_state.request_vector)
+                TAU_state.time_vector = list(TAU_state.time_vector) #make them mutable
+                # add requests from queue until reaching request limit or no more requests in queue
+                while len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS or not request_queues[vertihub_idx].empty():
+                    next_request, queued_time = request_queues[vertihub_idx].get()
+                    port, ttl = next_request
+                    ttl = ttl - (TIME_STEP - queued_time) # subtract time to land by how long its been in the queue
+                    TAU_state.request_vector.append(port)
+                    TAU_state.time_vector.append(ttl)
                 
-                # so if we add to the first empty state, then we need to pad it with empty states.
-                # yes, for record keeping. if there isn't and additional request, our tower will have no states!
+                TAU_state.request_vector = tuple(TAU_state.request_vector)
+                TAU_state.time_vector = tuple(TAU_state.time_vector)
+
                 # NOTE: graph construction happens here
                 TAU_graph = rg.ReworkedGraph(
                     TAU_state._port_dict, 
@@ -148,81 +104,131 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
                     TAU_state.request_vector, 
                     TAU_state.time_vector
                 )
-                TAU_graphs[requested_tower_index] = TAU_graph #NOTE: heuristic graphs are set here
+                TAU_graphs[vertihub_idx] = TAU_graph #NOTE: heuristic graphs are set here
+
             #NOTE: at this point, all towers should have a corresponding TAU_graph. Now, we just need to do the passing heuristic for TAU states, and then record the pre-TAU states
             gm.run_minimizing_mvp(TAU_graphs) # Request passing heuristic, modifies TAU_graphs by reference
             gm.reset_globals()
-            #TODO: now, we need to set the minimized traces for each tower:
-            for requested_tower_index in range(len(TAU_graphs)):
+            #now, we need to set the minimized traces for each tower:
+            for vertihub_idx in range(len(TAU_graphs)):
                 # NOTE: mvp happens here
-                requested_tower = minimized_traces[requested_tower_index]
-                TAU_trace = gm.generate_trace(TAU_graphs[requested_tower_index], override=True)[1]
+                requested_tower = minimized_traces[vertihub_idx]
+                TAU_trace = gm.generate_trace(TAU_graphs[vertihub_idx], override=True)[1]
                 if len(requested_tower) > TAU:
-                    minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
+                    minimized_traces[vertihub_idx] = requested_tower[:TAU] + TAU_trace
                 else:
-                    minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
+                    minimized_traces[vertihub_idx] = requested_tower[:-1] + TAU_trace
 
-            #TODO: at the moment, one clear issue is that the expiration bug still exists.
-
-            
-
-
-                    # if was_big_enough:
-                    #     # assert(len(requested_tower[0].request_vector) != 0 or TAU == 0)
-                    #     for time_index, state in enumerate(requested_tower[:TAU]):
-                    #         for index, request in enumerate(request_dict[requested_tower_index]):
-                    #             requested_port = request[0]
-                    #             adjusted_expiration_time = request[1] - time_index
-                    #             state.request_vector = list(state.request_vector)
-                    #             state.time_vector = list(state.time_vector)
-                    #             state.request_vector.append(requested_port)
-                    #             state.time_vector.append(adjusted_expiration_time) 
-                    #             state.request_vector = tuple(state.request_vector)
-                    #             state.time_vector = tuple(state.time_vector)
-                    #             state.labels = state.generate_labels()
-
-                    #     minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
-                    # else:
-                    #     # if(len(requested_tower) > 0):
-                    #         # print(TAU)
-                    #         # assert(len(requested_tower[0].request_vector) != 0 )
-                    #     for time_index, state in enumerate(requested_tower[:-1]):
-                    #         for index, request in enumerate(request_dict[requested_tower_index]):
-                    #             requested_port = request[0]
-                    #             adjusted_expiration_time = request[1] - time_index
-                    #             state.request_vector = list(state.request_vector)
-                    #             state.time_vector = list(state.time_vector)
-                    #             state.request_vector.append(requested_port)
-                    #             state.time_vector.append(adjusted_expiration_time) 
-                    #             state.request_vector = tuple(state.request_vector)
-                    #             state.time_vector = tuple(state.time_vector)
-                    #             state.labels = state.generate_labels()
-                    #     minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
-
-                # print("Full trace including new requests = " + str(minimized_traces[requested_tower_index]))
-            # current_num_requests = 0
-            # for trace in minimized_traces:
-            #     if(len(trace) > 0):
-            #         current_num_requests += len(trace[0].request_vector)
-            # num_reqs = 0
-            # for key in additional_requests[TIME_STEP][0]:
-            #     print(additional_requests[TIME_STEP][0][key])
-            #     num_reqs += len(additional_requests[TIME_STEP][0][key])
-
-            # print (current_num_requests)
-            # print (sum_of_requests)
-            # print (num_reqs)
-            # print (TIME_STEP)
-            # if sum_of_requests == 0:
-
-            #     assert(current_num_requests == sum_of_requests + num_reqs)
-            # else:
-
-            #     assert(current_num_requests == sum_of_requests + num_reqs -1)
-            # sum_of_requests = current_num_requests
             end_time = time.perf_counter()
         else:
             end_time = start_time
+
+
+
+
+        # if not request_queues_empty(request_queues):
+        #     print('Current time step : ' + str(TIME_STEP) + '/' + str(len(additional_requests)))
+        #     print('additional requests = ' + str(additional_requests[TIME_STEP]))
+        #     #add to the preferred tower at the TAU state. 
+        #     # print(additional_requests[TIME_STEP])
+        #     assert(len(additional_requests[TIME_STEP]) <= 1)
+        #     #there is only ONE request_dict per additional_requests[TIME_STEP]
+        #     # iterate over all of the towers
+        #     for requested_tower_index in range(len(TAU_graphs)):
+        #         requested_tower = minimized_traces[requested_tower_index]
+
+        #         # check if requested tower has an existing TAU state, else its an empty state
+        #         was_big_enough = False
+        #         TAU_state = None
+        #         if len(requested_tower) > TAU:
+        #             TAU_state = copy.deepcopy(requested_tower[TAU]) 
+        #             TAU_state.labels = TAU_state.generate_labels()
+        #             was_big_enough = True
+        #         else:
+        #             # fill_with_empty_states(requested_tower) 
+        #             TAU_state = copy.deepcopy(DEFAULT_EMPTY_STATE)
+                
+        #         if additional_requests[TIME_STEP][0].get(requested_tower_index,None) != None:   # the None is what get will return if it does not find the first parameter in its list of keys (requested_tower_index)         
+        #             # print("additional requests for tower " + str(requested_tower_index) + " = " + str(additional_requests[TIME_STEP][0][requested_tower_index]))
+        #             # make a separate method for this code
+        #             if was_big_enough:
+        #                 for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
+        #                     # print (additional_requests[TIME_STEP][0][requested_tower_index])
+        #                     requested_port = request[0]
+        #                     adjusted_expiration_time = request[1] - TAU 
+        #                     TAU_state.request_vector = list(TAU_state.request_vector)
+        #                     TAU_state.time_vector = list(TAU_state.time_vector)
+        #                     #NOTE: This is where we cap the number of requests in a tower state
+        #                     if len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS:
+        #                         TAU_state.request_vector.append(requested_port)
+        #                         TAU_state.time_vector.append(adjusted_expiration_time)
+        #                         if Purdue_Data_Output != None:
+        #                             Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
+
+        #                     else:
+        #                         additional_requests_culled[TIME_STEP][0][requested_tower_index].remove(request) # NOTE: an issue here is that two requests may be the exact same (same port, same expiration), so if we had requests = [(0,0), (1,1), (0,0)], and we were rejecting number 3, this would actually make the list [(1,1), (0,0)] instead of [(0,0), (1,1)]. This could definitely have an effect, although I'm not sure how serious the impact will be
+        #                         if Purdue_Data_Output != None:
+        #                             Purdue_Data_Output.num_denied_requests += 1
+        #                         print("DENIED REQUEST") 
+        #             else:
+        #                 for index, request in enumerate(additional_requests[TIME_STEP][0][requested_tower_index]):
+        #                     requested_port = request[0]
+        #                     # add the requests to the first empty state 
+        #                     # for this case, lets say there is a tower that has an empty last state in the sense that it its last state
+        #                     # is a "finish" state. this check here will build off of that state. the other case if its an empty tower, which
+        #                     # then of course we just use the empty state.
+        #                     #NOTE: The +1 is because the requested_tower will always have an empty state, which means that the len(requested_tower) will always be at least one, even if its empty
+        #                     if TAU == 0:
+        #                         adjusted_expiration_time = request[1] - len(requested_tower)
+        #                     else:
+        #                         adjusted_expiration_time = request[1] - len(requested_tower) +1
+
+        #                     # print("last request_vector = " + str(len(requested_tower[len(requested_tower)-1].request_vector)))
+        #                     # only check the final state because it is the only one that can actually be empty, we also check if index == 0 b/c we only want to do this for the first request at this time step. if we do it for all of them, we continally reset our TAU state
+        #                     # if index == 0 and len(requested_tower[len(requested_tower)-1].request_vector) == 0:
+        #                     #     TAU_state = copy.deepcopy(requested_tower[len(requested_tower)-1])
+        #                         # adjusted_expiration_time = request[1] - len(requested_tower) + 2 #NOTE: figure out what this "+2" was for...
+        #                     TAU_state.request_vector = list(TAU_state.request_vector)
+        #                     TAU_state.time_vector = list(TAU_state.time_vector)
+        #                     #NOTE: This is where we cap the number of requests in a tower state
+        #                     if len(TAU_state.request_vector) < MAX_ALLOWED_REQUESTS:
+        #                         TAU_state.request_vector.append(requested_port)
+        #                         TAU_state.time_vector.append(adjusted_expiration_time)
+        #                         if Purdue_Data_Output != None:
+        #                             Purdue_Data_Output.max_requests = max(Purdue_Data_Output.max_requests, len(TAU_state.request_vector))
+        #                     else:
+        #                         if Purdue_Data_Output != None:
+        #                             Purdue_Data_Output.num_denied_requests += 1
+
+        #                         additional_requests_culled[TIME_STEP][0][requested_tower_index].remove(request)
+        #                         print("DENIED REQUEST")
+                
+        #         # so if we add to the first empty state, then we need to pad it with empty states.
+        #         # yes, for record keeping. if there isn't and additional request, our tower will have no states!
+        #         # NOTE: graph construction happens here
+        #         TAU_graph = rg.ReworkedGraph(
+        #             TAU_state._port_dict, 
+        #             1, 
+        #             TAU_state.request_vector, 
+        #             TAU_state.time_vector
+        #         )
+        #         TAU_graphs[requested_tower_index] = TAU_graph #NOTE: heuristic graphs are set here
+        #     #NOTE: at this point, all towers should have a corresponding TAU_graph. Now, we just need to do the passing heuristic for TAU states, and then record the pre-TAU states
+        #     gm.run_minimizing_mvp(TAU_graphs) # Request passing heuristic, modifies TAU_graphs by reference
+        #     gm.reset_globals()
+        #     #TODO: now, we need to set the minimized traces for each tower:
+        #     for requested_tower_index in range(len(TAU_graphs)):
+        #         # NOTE: mvp happens here
+        #         requested_tower = minimized_traces[requested_tower_index]
+        #         TAU_trace = gm.generate_trace(TAU_graphs[requested_tower_index], override=True)[1]
+        #         if len(requested_tower) > TAU:
+        #             minimized_traces[requested_tower_index] = requested_tower[:TAU] + TAU_trace
+        #         else:
+        #             minimized_traces[requested_tower_index] = requested_tower[:-1] + TAU_trace
+
+        #     #TODO: at the moment, one clear issue is that the expiration bug still exists.
+        #     end_time = time.perf_counter()
+
 
 
         # what about the case when there are no more incoming requests for a while. then, we clearly won't have enough empty states
@@ -247,6 +253,14 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
     # for index in range(len(minimized_traces)):
     #     for state_index, state in enumerate(minimized_traces[index]):
     #         assert(completed_traces[index][state_index] == state)
+
+
+
+def request_queues_empty(request_queues: "list[Queue]"):
+    for q in request_queues:
+        if not q.empty():
+            return False
+    return True
 
 def get_mvp_output(completed_traces):
     finish_label = "REALTIME_FINISH"
