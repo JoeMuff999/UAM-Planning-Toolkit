@@ -149,7 +149,7 @@ def test_heuristic2():
 test_heuristic()
 
 # test_heuristic2()
-# test_additional_requests()
+test_additional_requests()
 # test_additional_requests_with_tau()
 # test_additional_requests_with_empty_state_gap()
 # test_additional_requests_with_tau_single_tower()
