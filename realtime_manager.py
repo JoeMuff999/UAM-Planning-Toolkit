@@ -93,6 +93,7 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
                     ttl = ttl - (TIME_STEP - queued_time) # subtract time to land by how long its been in the queue
                     if(ttl < 0):
                         Purdue_Data_Output.num_expired_requests += 1
+                        Purdue_Data_Output.expired_requests.append((ttl, vertihub_idx))
                     TAU_state.request_vector.append(port)
                     TAU_state.time_vector.append(ttl)
                 
