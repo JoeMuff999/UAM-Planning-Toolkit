@@ -91,6 +91,8 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
                     next_request, queued_time = request_queues[vertihub_idx].get()
                     port, ttl = next_request
                     ttl = ttl - (TIME_STEP - queued_time) # subtract time to land by how long its been in the queue
+                    if(ttl < 0):
+                        Purdue_Data_Output.num_expired_requests += 1
                     TAU_state.request_vector.append(port)
                     TAU_state.time_vector.append(ttl)
                 
