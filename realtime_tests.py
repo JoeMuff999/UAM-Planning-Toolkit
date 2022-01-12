@@ -146,7 +146,7 @@ def test_heuristic2():
 
 # debug_discrepancy()
 # test_realtime()
-test_heuristic()
+# test_heuristic()
 
 # test_heuristic2()
 test_additional_requests()
