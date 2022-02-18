@@ -1,9 +1,15 @@
 Run information: 
 
+Date of completion: 02/18/2022 03:33:52
+Completed in 951.1714518070221 seconds (15.852857530117035 minutes)
+
 Purdue Data Information: 
 --------------------------
 Trips file: data/Realtime/OpsLimits/trips_16_minutes-1_additional_vhubs_4.csv
 Vertiports file: data/Realtime/OpsLimits/vertiports_16_additional_vhubs_4.csv
+Minutes of data: 1
+Additional Vertihubs: 4
+
 Trip data overview 
 vertihub 0 has minimum arrival difference of 0.0
 vertihub 0 has average arrival difference of 27.964722731461208

@@ -1,0 +1,13 @@
+Run information: 
+
+Date of completion: 02/18/2022 13:39:19
+Completed in -43993.10213756561 seconds (-733.2183689594269 minutes)
+
+Purdue Data Information: 
+--------------------------
+Trips file: data/Realtime/OpsLimits/trips_12_minutes-1.csv
+Vertiports file: data/Realtime/OpsLimits/vertiports_12.csv
+Minutes of data: 1
+Additional Vertihubs: 0
+
+Trip data overview 
