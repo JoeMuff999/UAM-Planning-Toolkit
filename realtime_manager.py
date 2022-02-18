@@ -128,7 +128,6 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
 
 
 
-
         # if not request_queues_empty(request_queues):
         #     print('Current time step : ' + str(TIME_STEP) + '/' + str(len(additional_requests)))
         #     print('additional requests = ' + str(additional_requests[TIME_STEP]))
@@ -246,6 +245,7 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
 
         TIME_STEP += 1
         # print("completed traces = " + str(completed_traces) + "  time_step = " + str(TIME_STEP))
+    assert(request_queues_empty(request_queues))
     
     for trace in minimized_traces:
         assert(len(trace) == 0)
