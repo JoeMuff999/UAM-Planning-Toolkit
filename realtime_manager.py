@@ -76,6 +76,7 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
         if not request_queues_empty(request_queues):
             print('Current time step : ' + str(TIME_STEP) + '/' + str(len(additional_requests)))
             print('additional requests = ' + str(additional_requests[TIME_STEP]))
+
             for vertihub_idx in range(len(TAU_graphs)):
                 requested_vertihub = minimized_traces[vertihub_idx]
                 # select TAU state (e.g. state where incoming requests will go for the vertihub)
@@ -125,6 +126,7 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
             end_time = time.perf_counter()
         else:
             end_time = start_time
+
 
 
 
@@ -242,9 +244,11 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
         # record the time it took to replan around this round of incoming requests
         time_per_time_step = end_time - start_time
         timing_info.append(time_per_time_step)
-
+        Purdue_Data_Output.average_queue_size = [curr_avg + request_queues[idx].qsize() for idx, curr_avg in enumerate(Purdue_Data_Output.average_queue_size)] # add request_queue length for each vertihub
         TIME_STEP += 1
         # print("completed traces = " + str(completed_traces) + "  time_step = " + str(TIME_STEP))
+    
+    Purdue_Data_Output.average_queue_size = [i/float(TIME_STEP) for i in Purdue_Data_Output.average_queue_size]
     assert(request_queues_empty(request_queues))
     
     for trace in minimized_traces:

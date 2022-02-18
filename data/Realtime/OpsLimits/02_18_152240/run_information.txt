@@ -1,0 +1,89 @@
+Run information: 
+
+Date of completion: 02/18/2022 15:22:40
+Completed in 1075.3341536521912 seconds (17.922235894203187 minutes)
+
+Purdue Data Information: 
+--------------------------
+Trips file: data/Realtime/OpsLimits/trips_12_minutes-1.csv
+Vertiports file: data/Realtime/OpsLimits/vertiports_12.csv
+Minutes of data: 1
+Additional Vertihubs: 0
+
+Trip data statistics 
+vertihub 0 has minimum arrival difference of 0.0
+vertihub 0 has average arrival difference of 27.964722731461208
+vertihub 0 has maximum arrival difference of 368.33740404510854
+vertihub 0 has 67 trips
+
+vertihub 1 has minimum arrival difference of 0.0
+vertihub 1 has average arrival difference of 1.4076275909285016
+vertihub 1 has maximum arrival difference of 60.0
+vertihub 1 has 600 trips
+
+vertihub 2 has minimum arrival difference of 0.0
+vertihub 2 has average arrival difference of 5.468590169910053
+vertihub 2 has maximum arrival difference of 52.44847756529782
+vertihub 2 has 149 trips
+
+vertihub 3 has minimum arrival difference of 0.0
+vertihub 3 has average arrival difference of 8.32450869031714
+vertihub 3 has maximum arrival difference of 223.01719208653503
+vertihub 3 has 222 trips
+
+vertihub 4 has minimum arrival difference of 0.0
+vertihub 4 has average arrival difference of 44.1769226954013
+vertihub 4 has maximum arrival difference of 145.07000678866893
+vertihub 4 has 23 trips
+
+vertihub 5 has minimum arrival difference of 0.0
+vertihub 5 has average arrival difference of 2.1577557429488032
+vertihub 5 has maximum arrival difference of 496.1526839644994
+vertihub 5 has 925 trips
+
+vertihub 6 has minimum arrival difference of 0.0
+vertihub 6 has average arrival difference of 3.655789070043662
+vertihub 6 has maximum arrival difference of 85.90720785900339
+vertihub 6 has 348 trips
+
+vertihub 7 has minimum arrival difference of 0.0
+vertihub 7 has average arrival difference of 24.963118639492762
+vertihub 7 has maximum arrival difference of 270.0591326254108
+vertihub 7 has 40 trips
+
+vertihub 8 has minimum arrival difference of 0.0
+vertihub 8 has average arrival difference of 21.619972059834424
+vertihub 8 has maximum arrival difference of 172.01857897047665
+vertihub 8 has 40 trips
+
+vertihub 9 has minimum arrival difference of 0.0
+vertihub 9 has average arrival difference of 13.050363054049159
+vertihub 9 has maximum arrival difference of 235.800810913365
+vertihub 9 has 97 trips
+
+vertihub 10 has minimum arrival difference of 0.0
+vertihub 10 has average arrival difference of 11.708452175366409
+vertihub 10 has maximum arrival difference of 215.625415993017
+vertihub 10 has 89 trips
+
+vertihub 11 has minimum arrival difference of 0.0
+vertihub 11 has average arrival difference of 2.5882299483325912
+vertihub 11 has maximum arrival difference of 381.2650478766027
+vertihub 11 has 738 trips
+
+Most popular flight path (65, (128.0, 38.0))
+Total flight paths 1412
+Mean requests per flight path 2.3725212464589234
+Sorted vertihub popularity: [(925, 5), (738, 11), (600, 1), (348, 6), (222, 3), (149, 2), (97, 9), (89, 10), (67, 0), (40, 8), (40, 7), (23, 4)]
+
+Request queue statistics 
+requests expired = 341
+min ttl = (-7, 11)
+max ttl = (-1, 11)
+avg ttl = -2.129032258064516
+avg queue sizes per vertihub = [0.0, 0.37629839471199245, 0.0084985835694051, 0.0084985835694051, 0.0, 1.2559017941454202, 0.07176581680830972, 0.0, 0.0, 0.0, 0.0033050047214353163, 0.8012275731822474]
+avg queue size overall = 0.21045797922568457
+
+
+End Purdue Data Information: 
+--------------------------
