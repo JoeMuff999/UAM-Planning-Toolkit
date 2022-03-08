@@ -61,7 +61,10 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
     request_queues = [Queue() for i in minimized_traces] # request queue for each vertihub
     #TODO: make it so that a vertihub does not have more than 8 requests inside of it at any point
     while not are_traces_empty(minimized_traces) or TIME_STEP < len(additional_requests): 
-        start_time = time.perf_counter()   
+        #NOTE: use this list to record the runtime for each vertihub for this time step
+        #Float A = time to construct vertihub state space, Float B = request passing heuristic runtime
+        #Float C = time to find minimally violating trace (Nok/Tulip function)
+        runtime_information_per_vertihub = [[0,0,0] for i in range(len(TAU_graphs))]
         
         # NOTE: the "[{}]" check is needed because the purdue data input has a dictionary even if there are no additional requests
         if TIME_STEP < len(additional_requests) and additional_requests[TIME_STEP] != [] and additional_requests[TIME_STEP] != [{}]: # if there is an incoming request at this time step
@@ -73,11 +76,13 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
                     request_queues[vertihub_idx].put((req, TIME_STEP)) # ((port, ttl), current_time_step) aka (req, time step when added to queue)
                     #when we put them on the queue, we include the current time step and then when they are popped off the queue, the expiration time = TTL - (TIME_STEP - queue_time)
 
+
         if not request_queues_empty(request_queues):
             print('Current time step : ' + str(TIME_STEP) + '/' + str(len(additional_requests)))
             print('additional requests = ' + str(additional_requests[TIME_STEP]))
-
             for vertihub_idx in range(len(TAU_graphs)):
+                start_state_space_construction = time.perf_counter()   
+
                 requested_vertihub = minimized_traces[vertihub_idx]
                 # select TAU state (e.g. state where incoming requests will go for the vertihub)
                 if len(requested_vertihub) > 0:
@@ -109,23 +114,34 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
                     TAU_state.time_vector
                 )
                 TAU_graphs[vertihub_idx] = TAU_graph #NOTE: heuristic graphs are set here
+                # log graph construction runtime for this verthub
+                runtime_information_per_vertihub[vertihub_idx][0] = time.perf_counter() - start_state_space_construction
+
 
             #NOTE: at this point, all towers should have a corresponding TAU_graph. Now, we just need to do the passing heuristic for TAU states, and then record the pre-TAU states
-            gm.run_minimizing_mvp(TAU_graphs) # Request passing heuristic, modifies TAU_graphs by reference
+            _, _, _, mvp_runtime_information, _ = gm.run_minimizing_mvp(TAU_graphs) # Request passing heuristic, modifies TAU_graphs by reference
+            # mvp_runtime_information contains the per round runtime for each vertihub. ex: mvp_runtime_information[round_idx][vertihub_idx] = [float ERFind, float PRTest]. ERFind is the time it takes to find the most expensive request, and PRTest is the time it takes to test all of the published requests
+            # log request passing heuristic runtime per vertihub
+            for round_idx in range(len(mvp_runtime_information)):
+                for vertihub_idx in range(len(mvp_runtime_information[round_idx])):
+                    runtime_information_per_vertihub[vertihub_idx][1] += sum(mvp_runtime_information[round_idx][vertihub_idx]) 
+        
             gm.reset_globals()
             #now, we need to set the minimized traces for each tower:
             for vertihub_idx in range(len(TAU_graphs)):
                 # NOTE: mvp happens here
                 requested_tower = minimized_traces[vertihub_idx]
+                start_optimal_trace_search_time = time.perf_counter()
                 TAU_trace = gm.generate_trace(TAU_graphs[vertihub_idx], override=True)[1]
+                #log the optimal trace search time (cost of running TuLiP graph search + spec checking)
+                runtime_information_per_vertihub[vertihub_idx][2] = time.perf_counter() - start_optimal_trace_search_time
+
                 if len(requested_tower) > TAU:
                     minimized_traces[vertihub_idx] = requested_tower[:TAU] + TAU_trace
                 else:
                     minimized_traces[vertihub_idx] = requested_tower[:-1] + TAU_trace
 
-            end_time = time.perf_counter()
-        else:
-            end_time = start_time
+
 
 
 
@@ -242,8 +258,7 @@ def main_loop(initial_system, additional_requests, MAX_ALLOWED_REQUESTS=8, Purdu
 
 
         # record the time it took to replan around this round of incoming requests
-        time_per_time_step = end_time - start_time
-        timing_info.append(time_per_time_step)
+        timing_info.append(runtime_information_per_vertihub)
         Purdue_Data_Output.average_queue_size = [curr_avg + request_queues[idx].qsize() for idx, curr_avg in enumerate(Purdue_Data_Output.average_queue_size)] # add request_queue length for each vertihub
         TIME_STEP += 1
         # print("completed traces = " + str(completed_traces) + "  time_step = " + str(TIME_STEP))
