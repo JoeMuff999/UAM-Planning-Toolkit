@@ -1,0 +1,69 @@
+Run information: 
+
+Date of completion: 04/22/2022 13:53:38
+Completed in 9349.906413555145 seconds (155.8317735592524 minutes)
+
+Purdue Data Information: 
+--------------------------
+Trips file: data/Realtime/OpsLimits/trips_8_minutes-1.csv
+Vertiports file: data/Realtime/OpsLimits/vertiports_8.csv
+Minutes of data: 1
+Additional Vertihubs: 0
+
+Trip data statistics 
+vertihub 0 has minimum arrival difference of 0.0
+vertihub 0 has average arrival difference of 5.0277512314789865
+vertihub 0 has maximum arrival difference of 368.33740404510854
+vertihub 0 has 421 trips
+
+vertihub 1 has minimum arrival difference of 0.0
+vertihub 1 has average arrival difference of 1.1427127220706537
+vertihub 1 has maximum arrival difference of 394.82676135005545
+vertihub 1 has 1730 trips
+
+vertihub 2 has minimum arrival difference of 0.0
+vertihub 2 has average arrival difference of 2.575970217425694
+vertihub 2 has maximum arrival difference of 223.01719208653503
+vertihub 2 has 765 trips
+
+vertihub 3 has minimum arrival difference of 0.0
+vertihub 3 has average arrival difference of 1.8043589895087906
+vertihub 3 has maximum arrival difference of 215.625415993017
+vertihub 3 has 664 trips
+
+vertihub 4 has minimum arrival difference of 0.0
+vertihub 4 has average arrival difference of 3.615051880568921
+vertihub 4 has maximum arrival difference of 119.16010865147936
+vertihub 4 has 296 trips
+
+vertihub 5 has minimum arrival difference of 0.0
+vertihub 5 has average arrival difference of 1.3072748904826519
+vertihub 5 has maximum arrival difference of 85.90720785900339
+vertihub 5 has 1066 trips
+
+vertihub 6 has minimum arrival difference of 0.0
+vertihub 6 has average arrival difference of 12.789342431280394
+vertihub 6 has maximum arrival difference of 174.24271732829857
+vertihub 6 has 104 trips
+
+vertihub 7 has minimum arrival difference of 0.0
+vertihub 7 has average arrival difference of 0.47360882798704695
+vertihub 7 has maximum arrival difference of 352.398303958905
+vertihub 7 has 4449 trips
+
+Most popular flight path (102, (38.0, 38.0))
+Total flight paths 2850
+Mean requests per flight path 3.334385964912281
+Sorted vertihub popularity: [(4449, 7), (1730, 1), (1066, 5), (765, 2), (664, 3), (421, 0), (296, 4), (104, 6)]
+
+Request queue statistics 
+requests expired = 8800
+min ttl = (-750, 7)
+max ttl = (-1, 7)
+avg ttl = -297.5567045454545
+avg queue sizes per vertihub = [11.354579792256846, 113.64966949952786, 31.665722379603398, 28.784230406043438, 11.483474976392824, 51.8399433427762, 3.5056657223796033, 1005.0788479697828]
+avg queue size overall = 157.17026676109538
+
+
+End Purdue Data Information: 
+--------------------------
